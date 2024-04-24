@@ -21,10 +21,9 @@ namespace PhysicsManager
       // Check if the Minkowski sum overlaps the origin (0, 0)
       if (left <= 0 && right >= 0 && top <= 0 && bottom >= 0)
       {
-        System.Console.WriteLine("Collision Detected");
         return true; // Collision detected
       }
-      System.Console.WriteLine("No Collision Detected");
+      
       return false; // No collision
     }
   }

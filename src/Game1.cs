@@ -6,12 +6,15 @@ using InputManager;
 using PhysicsManager;
 using GraphicsManager;
 using Tiles;
+using SettingsManager;
 
 namespace MyGame;
 
 public class Game1 : Game
 {
     private GraphicsDeviceManager _graphics;
+    private WindowManager _windowManager;
+
     private SpriteBatch _spriteBatch;
     private SpriteManager _spriteManager;
     private CollisionManager _collisionManager;
@@ -22,15 +25,14 @@ public class Game1 : Game
 
     public Game1()
     {
+        _windowManager = new WindowManager();
+        _windowManager.LoadSettings();
+        System.Console.WriteLine("Window Title: " + _windowManager.WindowTitle);
         _graphics = new GraphicsDeviceManager(this)
         {
-            // Set Windowed Resolution
-            // PreferredBackBufferWidth = 960,
-            // PreferredBackBufferHeight = 540,
-            // Set Fullscreen Window (Max Resolution)
-            // PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width,
-            // PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height,
-            // IsFullScreen = true
+            PreferredBackBufferWidth = _windowManager.WindowWidth,
+            PreferredBackBufferHeight = _windowManager.WindowHeight,
+            IsFullScreen = _windowManager.IsFullScreen
         };
         _graphics.ApplyChanges();
         Content.RootDirectory = "Content";
@@ -39,6 +41,7 @@ public class Game1 : Game
 
     protected override void Initialize()
     {
+        Window.Title = _windowManager.WindowTitle;
         _keyboardInput = new KeyboardInput();
         _mouseInput = new MouseInput();
         _gamePadInput = new GamePadInput();
