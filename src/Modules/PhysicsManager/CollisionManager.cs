@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using GraphicsManager;
 using Microsoft.Xna.Framework;
 
 namespace PhysicsManager
