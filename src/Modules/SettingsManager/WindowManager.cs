@@ -5,9 +5,9 @@ using dotenv.net;
 
 namespace SettingsManager
 {
-    public class WindowManager
+  public class WindowManager
   {
-    private string settingsFilePath;
+    private readonly string settingsFilePath;
     public string WindowTitle { get; set; }
     public int WindowWidth { get; set; }
     public int WindowHeight { get; set; }
@@ -22,7 +22,7 @@ namespace SettingsManager
       WindowHeight = 600;
       IsFullScreen = false;
       IsBorderless = false;
-      DotEnv.Load(new DotEnvOptions(envFilePaths: new[] {"..\\..\\..\\.env"}));
+      DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { "..\\..\\..\\.env" }));
       settingsFilePath = Environment.GetEnvironmentVariable("SETTINGS_FILE_PATH");
     }
 

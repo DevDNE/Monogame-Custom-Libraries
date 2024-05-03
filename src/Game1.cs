@@ -2,31 +2,29 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using InputManager;
-using PhysicsManager;
 using GraphicsManager;
-using Tiles;
 using SettingsManager;
+using TestingSprites;
+
 
 namespace MyGame;
 
 public class Game1 : Game
 {
-    private GraphicsDeviceManager _graphics;
-    private WindowManager _windowManager;
+    private readonly GraphicsDeviceManager _graphics;
+    private readonly WindowManager _windowManager;
 
     private SpriteBatch _spriteBatch;
-    private SpriteManager _spriteManager;
-    private CollisionManager _collisionManager;
+    private DrawManager _drawManager;
     private KeyboardInput _keyboardInput;
     private MouseInput _mouseInput;
     private GamePadInput _gamePadInput;
-    private Tile _tile;
+    private SpriteTesting _spriteTesting;
 
     public Game1()
     {
         _windowManager = new WindowManager();
         _windowManager.LoadSettings();
-        System.Console.WriteLine("Window Title: " + _windowManager.WindowTitle);
         _graphics = new GraphicsDeviceManager(this)
         {
             PreferredBackBufferWidth = _windowManager.WindowWidth,
@@ -44,16 +42,15 @@ public class Game1 : Game
         _keyboardInput = new KeyboardInput();
         _mouseInput = new MouseInput();
         _gamePadInput = new GamePadInput();
-        _spriteManager = new SpriteManager();
-        _collisionManager = new CollisionManager();
-        _tile = new Tile(_spriteManager, _collisionManager);
+        _drawManager = new DrawManager();
+        _spriteTesting = new SpriteTesting(_drawManager);
         base.Initialize();
     }
 
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _tile.LoadContent(Content);
+        _spriteTesting.LoadContent(Content);
     }
 
     protected override void Update(GameTime gameTime)
@@ -61,7 +58,7 @@ public class Game1 : Game
         _keyboardInput.Update();
         _mouseInput.Update();
         _gamePadInput.Update();
-        _tile.Update(gameTime);
+        _spriteTesting.Update(gameTime);
         base.Update(gameTime);
     }
 
@@ -69,7 +66,7 @@ public class Game1 : Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
         _spriteBatch.Begin();
-        _spriteManager.Draw(_spriteBatch);
+        _drawManager.Draw(_spriteBatch);
         _spriteBatch.End();
         base.Draw(gameTime);
     }

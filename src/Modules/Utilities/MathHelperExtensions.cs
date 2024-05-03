@@ -54,6 +54,6 @@ namespace Utilities
       return new Vector2(RandomFloat(rectangle.Left, rectangle.Right), RandomFloat(rectangle.Top, rectangle.Bottom));
     }
 
-    private static Random random = new Random();
+    private static readonly Random random = new Random();
   }
 }
