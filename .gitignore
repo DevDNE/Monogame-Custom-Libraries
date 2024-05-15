@@ -1,8 +1,13 @@
 # .Net / MonoGame
 obj
 bin
+platform
 Content/obj
 Content/bin
+project.csproj
+app.manifest
+Icon.bmp
+Icon.ico
 
 # Other
 Thumbs.db

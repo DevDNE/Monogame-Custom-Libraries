@@ -7,19 +7,16 @@
     <TieredCompilation>false</TieredCompilation>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationManifest>platform/windows/app.manifest</ApplicationManifest>
-    <ApplicationIcon>platform/windows/Icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <SrcFolderReference Include="src/**" />
+    <None Remove="Icon.ico" />
+    <None Remove="Icon.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <None Remove="platform/windows/Icon.ico" />
-    <None Remove="platform/Icon.bmp" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="platform/windows/Icon.ico" />
-    <EmbeddedResource Include="platform/Icon.bmp" />
+    <EmbeddedResource Include="Icon.ico" />
+    <EmbeddedResource Include="Icon.bmp" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="dotenv.net" Version="3.1.3" />
