@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using InputManager;
 using GraphicsManager;
 using SettingsManager;
+using DebugManager;
 using TestingSprites;
 
 
@@ -20,6 +21,7 @@ public class Game1 : Game
     private MouseInput _mouseInput;
     private GamePadInput _gamePadInput;
     private SpriteTesting _spriteTesting;
+    private PerformanceMonitor _performanceMonitor;
 
     public Game1()
     {
@@ -44,6 +46,7 @@ public class Game1 : Game
         _gamePadInput = new GamePadInput();
         _drawManager = new DrawManager();
         _spriteTesting = new SpriteTesting(_drawManager);
+        _performanceMonitor = new PerformanceMonitor(this);
         base.Initialize();
     }
 
@@ -59,6 +62,7 @@ public class Game1 : Game
         _mouseInput.Update();
         _gamePadInput.Update();
         _spriteTesting.Update(gameTime);
+        _performanceMonitor.Update(gameTime);
         base.Update(gameTime);
     }
 
