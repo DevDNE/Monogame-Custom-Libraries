@@ -6,6 +6,7 @@ using GraphicsManager;
 using SettingsManager;
 using DebugManager;
 using TestingSprites;
+using SoundManager;
 
 
 namespace MyGame;
@@ -13,7 +14,7 @@ namespace MyGame;
 public class Game1 : Game
 {
     private readonly GraphicsDeviceManager _graphics;
-    private readonly WindowManager _windowManager;
+    private readonly WindowSettings _windowSettings;
 
     private SpriteBatch _spriteBatch;
     private DrawManager _drawManager;
@@ -22,16 +23,17 @@ public class Game1 : Game
     private GamePadInput _gamePadInput;
     private SpriteTesting _spriteTesting;
     private PerformanceMonitor _performanceMonitor;
+    private Media _media;
 
     public Game1()
     {
-        _windowManager = new WindowManager();
-        _windowManager.LoadSettings();
+        _windowSettings = new WindowSettings();
+        _windowSettings.LoadSettings();
         _graphics = new GraphicsDeviceManager(this)
         {
-            PreferredBackBufferWidth = _windowManager.WindowWidth,
-            PreferredBackBufferHeight = _windowManager.WindowHeight,
-            IsFullScreen = _windowManager.IsFullScreen
+            PreferredBackBufferWidth = _windowSettings.WindowWidth,
+            PreferredBackBufferHeight = _windowSettings.WindowHeight,
+            IsFullScreen = _windowSettings.IsFullScreen
         };
         _graphics.ApplyChanges();
         Content.RootDirectory = "Content";
@@ -40,13 +42,14 @@ public class Game1 : Game
 
     protected override void Initialize()
     {
-        Window.Title = _windowManager.WindowTitle;
+        Window.Title = _windowSettings.WindowTitle;
         _keyboardInput = new KeyboardInput();
         _mouseInput = new MouseInput();
         _gamePadInput = new GamePadInput();
         _drawManager = new DrawManager();
         _spriteTesting = new SpriteTesting(_drawManager);
         _performanceMonitor = new PerformanceMonitor(this);
+        _media = new Media(Content);
         base.Initialize();
     }
 
@@ -54,6 +57,7 @@ public class Game1 : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _spriteTesting.LoadContent(Content);
+        //_media.LoadSoundEffect("beep");
     }
 
     protected override void Update(GameTime gameTime)

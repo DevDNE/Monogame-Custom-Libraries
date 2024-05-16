@@ -5,7 +5,7 @@ using dotenv.net;
 
 namespace SettingsManager
 {
-  public class WindowManager
+  public class WindowSettings
   {
     private readonly string settingsFilePath;
     public string WindowTitle { get; set; }
@@ -15,9 +15,9 @@ namespace SettingsManager
     public bool IsBorderless { get; set; }
 
     // Constructor
-    public WindowManager()
+    public WindowSettings()
     {
-      WindowTitle = "My Game";
+      WindowTitle = "My Game - Custom Library";
       WindowWidth = 800;
       WindowHeight = 600;
       IsFullScreen = false;
@@ -37,7 +37,7 @@ namespace SettingsManager
       if (File.Exists(settingsFilePath))
       {
         string json = File.ReadAllText(settingsFilePath);
-        WindowManager settings = JsonConvert.DeserializeObject<WindowManager>(json);
+        WindowSettings settings = JsonConvert.DeserializeObject<WindowSettings>(json);
 
         // Copy loaded settings to this instance
         WindowTitle = settings.WindowTitle;

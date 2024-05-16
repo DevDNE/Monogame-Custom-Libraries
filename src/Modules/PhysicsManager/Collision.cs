@@ -2,7 +2,7 @@ using Microsoft.Xna.Framework;
 
 namespace PhysicsManager
 {
-  public class CollisionManager
+  public class Collision
   {
     // Can create a list of collidables to loop through for detection and add/remove methods if needed
     // Collidables can be enemies, projectiles, obstacles, and handled differently

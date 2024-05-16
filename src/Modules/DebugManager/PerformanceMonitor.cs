@@ -26,8 +26,8 @@ namespace DebugManager
                 _timer -= _oneSecond;
 
                 float memoryUsage = GC.GetTotalMemory(false) / 1024f / 1024f;
-                LoggingManager.LogMessage("Hello World", LogLevel.Info);
-                LoggingManager.LogPerformanceMetrics(_fps, memoryUsage);
+                Logging.LogMessage("Hello World", LogLevel.Info);
+                Logging.LogPerformanceMetrics(_fps, memoryUsage);
             }
 
             base.Update(gameTime);

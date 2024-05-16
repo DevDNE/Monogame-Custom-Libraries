@@ -48,7 +48,7 @@ namespace TestingSprites
     {
       walkBasicAnim.Update(gameTime);
 
-      if (CollisionManager.CheckCollisions(blackTile.Frames[blackTile.CurrentFrame], walkBasicAnim.Frames[walkBasicAnim.CurrentFrame]))
+      if (Collision.CheckCollisions(blackTile.Frames[blackTile.CurrentFrame], walkBasicAnim.Frames[walkBasicAnim.CurrentFrame]))
       {
         drawManager.RemoveSprite(blackTile);
         drawManager.RemoveSprite(walkBasicAnim);

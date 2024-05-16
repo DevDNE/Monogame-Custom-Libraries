@@ -2,7 +2,7 @@ using System;
 
 namespace DebugManager
 {
-  public class LoggingManager
+  public class Logging
   {
     public static void LogMessage(string message, LogLevel level)
     {
