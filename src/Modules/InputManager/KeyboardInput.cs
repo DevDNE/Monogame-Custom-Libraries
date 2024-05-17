@@ -23,7 +23,6 @@ namespace InputManager
     public bool WasKeyPressed(Keys key)
     {
       return previousKeyboardState.IsKeyUp(key) && currentKeyboardState.IsKeyDown(key);
-
     }
     public bool WasKeyReleased(Keys key)
     {

@@ -13,7 +13,7 @@ namespace GraphicsManager
       foreach (SpriteSheet sprite in sprites)
       {
         Rectangle sourceRectangle = sprite.Frames[sprite.CurrentFrame];
-        spriteBatch.Draw(sprite.Texture, sprite.Position, sourceRectangle, Color.White);
+        spriteBatch.Draw(sprite.Texture, sprite.DestinationFrame, sourceRectangle, Color.White);
       }
     }
 

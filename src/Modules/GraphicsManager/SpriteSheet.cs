@@ -11,6 +11,7 @@ namespace GraphicsManager
     public int Width { get; set; }
     public int Height { get; set; }
     public Rectangle[] Frames { get; set; }
+    public Rectangle DestinationFrame { get; set; }
     public float FrameInterval { get; set; }
     public int CurrentFrame { get; set; }
     private float elapsedTime;
@@ -21,6 +22,7 @@ namespace GraphicsManager
       Vector2 position,
       int width, int height,
       Rectangle[] frames,
+      Rectangle destinationFrame,
       float frameInterval,
       int currentFrame)
     {
@@ -30,6 +32,7 @@ namespace GraphicsManager
       Width = width;
       Height = height;
       Frames = frames;
+      DestinationFrame = destinationFrame;
       FrameInterval = frameInterval;
       CurrentFrame = currentFrame;
     }

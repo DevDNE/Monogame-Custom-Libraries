@@ -5,9 +5,9 @@ using InputManager;
 using GraphicsManager;
 using SettingsManager;
 using DebugManager;
-using TestingSprites;
 using SoundManager;
 
+using Entities;
 
 namespace MyGame;
 
@@ -21,9 +21,9 @@ public class Game1 : Game
     private KeyboardInput _keyboardInput;
     private MouseInput _mouseInput;
     private GamePadInput _gamePadInput;
-    private SpriteTesting _spriteTesting;
     private PerformanceMonitor _performanceMonitor;
     private Media _media;
+    private Player _player;
 
     public Game1()
     {
@@ -47,17 +47,20 @@ public class Game1 : Game
         _mouseInput = new MouseInput();
         _gamePadInput = new GamePadInput();
         _drawManager = new DrawManager();
-        _spriteTesting = new SpriteTesting(_drawManager);
         _performanceMonitor = new PerformanceMonitor(this);
         _media = new Media(Content);
+
+        _player = new Player(_drawManager, _keyboardInput);
+
         base.Initialize();
     }
 
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _spriteTesting.LoadContent(Content);
         //_media.LoadSoundEffect("beep");
+
+        _player.LoadContent(Content);
     }
 
     protected override void Update(GameTime gameTime)
@@ -65,8 +68,10 @@ public class Game1 : Game
         _keyboardInput.Update();
         _mouseInput.Update();
         _gamePadInput.Update();
-        _spriteTesting.Update(gameTime);
         _performanceMonitor.Update(gameTime);
+
+        _player.Update(gameTime);
+
         base.Update(gameTime);
     }
 
