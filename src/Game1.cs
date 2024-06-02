@@ -6,8 +6,7 @@ using GraphicsManager;
 using SettingsManager;
 using DebugManager;
 using SoundManager;
-
-using Entities;
+using ManageScenes;
 
 namespace MyGame;
 
@@ -23,7 +22,7 @@ public class Game1 : Game
     private GamePadInput _gamePadInput;
     private PerformanceMonitor _performanceMonitor;
     private Media _media;
-    private Player _player;
+    private SceneManager _sceneManager;
 
     public Game1()
     {
@@ -50,7 +49,7 @@ public class Game1 : Game
         _performanceMonitor = new PerformanceMonitor(this);
         _media = new Media(Content);
 
-        _player = new Player(_drawManager, _keyboardInput);
+        _sceneManager = new SceneManager(_drawManager, _keyboardInput, _mouseInput, _gamePadInput, _media, Content);
 
         base.Initialize();
     }
@@ -58,9 +57,8 @@ public class Game1 : Game
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
+        _sceneManager.LoadScene("FirstScene");
         //_media.LoadSoundEffect("beep");
-
-        _player.LoadContent(Content);
     }
 
     protected override void Update(GameTime gameTime)
@@ -69,8 +67,7 @@ public class Game1 : Game
         _mouseInput.Update();
         _gamePadInput.Update();
         _performanceMonitor.Update(gameTime);
-
-        _player.Update(gameTime);
+        _sceneManager.Update(gameTime);
 
         base.Update(gameTime);
     }

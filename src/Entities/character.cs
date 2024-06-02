@@ -33,6 +33,16 @@ namespace Entities
 
       drawManager.AddSprite(character);
     }
+    public void UnloadContent()
+    {
+      if (character != null)
+      {
+        character.Texture.Dispose();
+        character.Texture = null;
+      }
+      drawManager.RemoveSprite(character);
+      character = null;
+    }
     public void Update(GameTime gameTime)
     {
       
