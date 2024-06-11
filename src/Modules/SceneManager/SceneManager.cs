@@ -30,11 +30,7 @@ namespace ManageScenes
     {
       if (scenes.ContainsKey(name))
       {
-        if (currentScene != null)
-        {
-          currentScene.UnloadContent();
-        }
-
+        currentScene?.UnloadContent();
         currentScene = scenes[name];
         currentScene.LoadContent();
       }
