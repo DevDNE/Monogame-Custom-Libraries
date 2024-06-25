@@ -18,3 +18,18 @@ Install the above and open this folder in VS Code. Run one of the tasks with Ctr
 Main: http://www.monogame.net/documentation/
 
 That should be all you need to get started. Happy game making!
+
+
+## Steamworks Installation:
+**All Platforms**
+  - Run command: dotnet add package Steamworks.NET --version 20.2.0
+  - Download Steamworks.NET Standalone Zip from https://github.com/rlabrecque/Steamworks.NET/releases
+  - Copy Steamworks.NET.dll to output folder (root/bin/Debug/net6.0)
+  - Create file there called steam_appid.txt with 480 in the file. (480 is Spacewar game id that is used for testing) 
+**FOR Windows**
+ - Copy steam_api.dll/steam_api64.dll to output folder
+**FOR MAC**
+  - Copy steam_api.bundle to output folder
+  - Copy Steamworks.NET.dll.config to output folder
+
+Documentation for how to use Steamworks.NET found here: https://steamworks.github.io/

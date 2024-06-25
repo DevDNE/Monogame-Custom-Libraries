@@ -1,7 +1,10 @@
+using System;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using InputManager;
+using NetworkManager;
 using GraphicsManager;
 using SettingsManager;
 using DebugManager;
@@ -24,6 +27,7 @@ public class Game1 : Game
     private Media _media;
     private ManageScenes _manageScenes;
     private TextManager _textManager;
+    private SteamworksManager _steamworksManager;
 
     public Game1()
     {
@@ -42,6 +46,7 @@ public class Game1 : Game
 
     protected override void Initialize()
     {
+        _steamworksManager = new SteamworksManager();
         Window.Title = _windowSettings.WindowTitle;
         _keyboardInput = new KeyboardInput();
         _mouseInput = new MouseInput();
@@ -70,6 +75,7 @@ public class Game1 : Game
         _gamePadInput.Update();
         //_performanceMonitor.Update(gameTime);
         _manageScenes.Update(gameTime);
+        _steamworksManager.Update();
 
         base.Update(gameTime);
     }
@@ -83,5 +89,11 @@ public class Game1 : Game
         _spriteBatch.End();
 
         base.Draw(gameTime);
+    }
+    
+    protected override void OnExiting(object sender, EventArgs args)
+    {
+        _steamworksManager.Shutdown();
+        base.OnExiting(sender, args);
     }
 }
