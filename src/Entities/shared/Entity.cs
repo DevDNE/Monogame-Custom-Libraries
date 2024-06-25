@@ -1,9 +1,9 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 
-namespace SceneManager
+namespace Entities
 {
-  public abstract class GameScene
+  public abstract class Entity
   {
     public abstract void LoadContent(ContentManager content);
     public abstract void UnloadContent();

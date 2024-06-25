@@ -4,20 +4,23 @@ using System.Collections.Generic;
 using InputManager;
 using SoundManager;
 using GraphicsManager;
+using Scenes;
+using UIManager;
 
-namespace ManageScenes
+namespace SceneManager
 {
-  public class SceneManager
+  public class ManageScenes
   {
     private Dictionary<string, GameScene> scenes;
     private GameScene currentScene;
     private FirstScene firstScene;
-    public SceneManager(DrawManager drawManager, KeyboardInput keyboardInput, MouseInput mouseInput, GamePadInput gamePadInput, Media media, ContentManager content)
+    private ContentManager content;
+    public ManageScenes(DrawManager drawManager, TextManager _textManager,  KeyboardInput keyboardInput, MouseInput mouseInput, GamePadInput gamePadInput, Media media, ContentManager content)
     {
+      this.content = content;
       scenes = new Dictionary<string, GameScene>();
       currentScene = null;
-      firstScene = new FirstScene(drawManager, keyboardInput, content);
-
+      firstScene = new FirstScene(drawManager, _textManager, keyboardInput);
       AddScene("FirstScene", firstScene);
     }
 
@@ -32,7 +35,7 @@ namespace ManageScenes
       {
         currentScene?.UnloadContent();
         currentScene = scenes[name];
-        currentScene.LoadContent();
+        currentScene.LoadContent(content);
       }
       else
       {

@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace GraphicsManager
 {
-  public class SpriteSheet
+  public class SpriteSheet 
   {
     public string Name { get; set; }
     public Texture2D Texture { get; set; }
@@ -15,6 +15,21 @@ namespace GraphicsManager
     public float FrameInterval { get; set; }
     public int CurrentFrame { get; set; }
     private float elapsedTime;
+
+    public object Clone()
+    {
+      return new SpriteSheet(
+        Name,
+        Texture,
+        Position,
+        Width,
+        Height,
+        (Rectangle[])Frames.Clone(),
+        DestinationFrame,
+        FrameInterval,
+        CurrentFrame
+      );
+    }
 
     public SpriteSheet(
       string name,
@@ -49,6 +64,3 @@ namespace GraphicsManager
     }
   }
 }
-
-
-

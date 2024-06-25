@@ -3,22 +3,23 @@ using Microsoft.Xna.Framework.Content;
 using Entities;
 using GraphicsManager;
 using InputManager;
+using SceneManager;
+using UIManager;
 // using SoundManager;
 
 
-namespace ManageScenes
+namespace Scenes
 {
   public class FirstScene : GameScene
   {
     private ContentManager content;
     private Player _player;
-    public FirstScene(DrawManager drawManager, KeyboardInput keyboardInput, ContentManager content)
+    public FirstScene(DrawManager drawManager, TextManager textManager, KeyboardInput keyboardInput)
     {
-      this.content = content;
       _player = new Player(drawManager, keyboardInput);
     }
 
-    public override void LoadContent()
+    public override void LoadContent(ContentManager content)
     {
       // Add your content loading logic here
       _player.LoadContent(content);

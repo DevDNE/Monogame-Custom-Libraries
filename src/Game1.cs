@@ -6,7 +6,8 @@ using GraphicsManager;
 using SettingsManager;
 using DebugManager;
 using SoundManager;
-using ManageScenes;
+using SceneManager;
+using UIManager;
 
 namespace MyGame;
 
@@ -14,7 +15,6 @@ public class Game1 : Game
 {
     private readonly GraphicsDeviceManager _graphics;
     private readonly WindowSettings _windowSettings;
-
     private SpriteBatch _spriteBatch;
     private DrawManager _drawManager;
     private KeyboardInput _keyboardInput;
@@ -22,7 +22,8 @@ public class Game1 : Game
     private GamePadInput _gamePadInput;
     private PerformanceMonitor _performanceMonitor;
     private Media _media;
-    private SceneManager _sceneManager;
+    private ManageScenes _manageScenes;
+    private TextManager _textManager;
 
     public Game1()
     {
@@ -48,8 +49,9 @@ public class Game1 : Game
         _drawManager = new DrawManager();
         _performanceMonitor = new PerformanceMonitor(this);
         _media = new Media(Content);
+        _textManager = new TextManager(Content.Load<SpriteFont>("fonts/Arial"));
 
-        _sceneManager = new SceneManager(_drawManager, _keyboardInput, _mouseInput, _gamePadInput, _media, Content);
+        _manageScenes = new ManageScenes(_drawManager, _textManager, _keyboardInput, _mouseInput, _gamePadInput, _media, Content);
 
         base.Initialize();
     }
@@ -57,7 +59,7 @@ public class Game1 : Game
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _sceneManager.LoadScene("FirstScene");
+        _manageScenes.LoadScene("FirstScene");
         //_media.LoadSoundEffect("beep");
     }
 
@@ -66,8 +68,8 @@ public class Game1 : Game
         _keyboardInput.Update();
         _mouseInput.Update();
         _gamePadInput.Update();
-        _performanceMonitor.Update(gameTime);
-        _sceneManager.Update(gameTime);
+        //_performanceMonitor.Update(gameTime);
+        _manageScenes.Update(gameTime);
 
         base.Update(gameTime);
     }
@@ -76,8 +78,10 @@ public class Game1 : Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
         _spriteBatch.Begin();
+        _textManager.Draw(_spriteBatch);
         _drawManager.Draw(_spriteBatch);
         _spriteBatch.End();
+
         base.Draw(gameTime);
     }
 }
