@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -8,38 +9,56 @@ namespace UIManager
   public class TextManager
   {
     private SpriteFont _font;
-    private List<TextElement> textElements;
+    private Dictionary<string, List<TextElement>> textLists;
 
     public TextManager(SpriteFont font)
     {
       _font = font;
-      textElements = new List<TextElement>();
-    }
-    public void AddText(string text, Vector2 position, Color color)
-    {
-      textElements.Add(new TextElement(text, position, color, _font));
+      textLists = new Dictionary<string, List<TextElement>>();
     }
 
-    public void RemoveText(string text)
+    public void AddTextList(string name)
     {
-      textElements.RemoveAll(t => t.Text == text);
+      textLists.Add(name, new List<TextElement>());
+    }
+    
+    public void RemoveTextList(string name)
+    {
+      textLists.Remove(name);
+    }
+
+    public List<TextElement> GetTextList(string name)
+    {
+      return textLists[name];
+    }
+    public void AddText(string listName, string text, Vector2 position, Color color)
+    {
+      textLists[listName].Add(new TextElement(text, position, color, _font));
+    }
+
+    public void RemoveText(string listName, string text)
+    {
+      textLists[listName].RemoveAll(t => t.Text == text);
     }
 
     public void Draw(SpriteBatch spriteBatch)
     {
-      foreach (var textElement in textElements)
+      foreach (var textList in textLists)
       {
-        spriteBatch.DrawString(textElement.Font, textElement.Text, textElement.Position, textElement.Color);
+        foreach (var textElement in textLists[textList.Key])
+        {
+          spriteBatch.DrawString(textElement.Font, textElement.Text, textElement.Position, textElement.Color);
+        }
       }
     }
 
-    public void ScrollText()
+    public void ScrollText(string listName)
     {
-      foreach (TextElement item in textElements.ToList()) 
+      foreach (TextElement item in textLists[listName].ToList()) 
       {
-        if (textElements.Count > 25)
+        if (textLists[listName].Count > 25)
         {
-          textElements.RemoveAt(0);
+          textLists[listName].RemoveAt(0);
         }
         item.Position = new Vector2(item.Position.X, item.Position.Y + 20);
       }
