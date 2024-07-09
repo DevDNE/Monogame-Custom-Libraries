@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace UIManager {
+namespace Graphics {
   public class TextElement
   {
       public string Text { get; set; }

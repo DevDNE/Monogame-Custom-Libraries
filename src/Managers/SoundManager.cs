@@ -4,15 +4,15 @@ using Microsoft.Xna.Framework.Content;
 using System.Collections.Generic;
 using System;
 
-namespace SoundManager
+namespace Managers
 {
-    public class Media
+    public class SoundManager
     {
         private Dictionary<string, SoundEffect> soundEffects;
         private Dictionary<string, Song> songs;
         private ContentManager content;
 
-        public Media(ContentManager content)
+        public SoundManager(ContentManager content)
         {
             this.content = content;
             soundEffects = new Dictionary<string, SoundEffect>();

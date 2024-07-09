@@ -1,21 +1,17 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using System.Collections.Generic;
-using InputManager;
-using SoundManager;
-using GraphicsManager;
 using Scenes;
-using UIManager;
 
-namespace SceneManager
+namespace Managers
 {
-  public class ManageScenes
+  public class SceneManager
   {
     private Dictionary<string, GameScene> scenes;
     private GameScene currentScene;
     private FirstScene firstScene;
     private ContentManager content;
-    public ManageScenes(DrawManager drawManager, TextManager _textManager,  KeyboardInput keyboardInput, MouseInput mouseInput, GamePadInput gamePadInput, Media media, ContentManager content)
+    public SceneManager(DrawManager drawManager, TextManager _textManager,  KeyboardInput keyboardInput, MouseInput mouseInput, GamePadInput gamePadInput, SoundManager media, ContentManager content)
     {
       this.content = content;
       scenes = new Dictionary<string, GameScene>();

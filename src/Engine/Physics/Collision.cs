@@ -1,6 +1,6 @@
 using Microsoft.Xna.Framework;
 
-namespace PhysicsManager
+namespace Physics
 {
   public class Collision
   {

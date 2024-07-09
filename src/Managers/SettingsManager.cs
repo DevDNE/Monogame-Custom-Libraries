@@ -3,9 +3,9 @@ using System.IO;
 using Newtonsoft.Json;
 using dotenv.net;
 
-namespace SettingsManager
+namespace Managers
 {
-  public class WindowSettings
+  public class SettingsManager
   {
     private readonly string settingsFilePath;
     public string WindowTitle { get; set; }
@@ -15,7 +15,7 @@ namespace SettingsManager
     public bool IsBorderless { get; set; }
 
     // Constructor
-    public WindowSettings()
+    public SettingsManager()
     {
       WindowTitle = "My Game - Custom Library";
       WindowWidth = 800;
@@ -37,7 +37,7 @@ namespace SettingsManager
       if (File.Exists(settingsFilePath))
       {
         string json = File.ReadAllText(settingsFilePath);
-        WindowSettings settings = JsonConvert.DeserializeObject<WindowSettings>(json);
+        SettingsManager settings = JsonConvert.DeserializeObject<SettingsManager>(json);
 
         // Copy loaded settings to this instance
         WindowTitle = settings.WindowTitle;

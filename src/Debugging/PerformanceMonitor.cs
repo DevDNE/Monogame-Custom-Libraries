@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Xna.Framework;
 
-namespace DebugManager
+namespace Debugging
 {
     public class PerformanceMonitor : GameComponent
     {

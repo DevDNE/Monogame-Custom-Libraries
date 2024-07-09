@@ -1,7 +1,7 @@
 using System;
 using Steamworks;
 
-namespace NetworkManager
+namespace Managers
 {
   public class SteamworksManager
   {

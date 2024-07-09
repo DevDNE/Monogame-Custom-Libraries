@@ -1,10 +1,8 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
+using Managers;
 using Entities;
-using GraphicsManager;
-using InputManager;
-using SceneManager;
-using UIManager;
+
 // using SoundManager;
 
 

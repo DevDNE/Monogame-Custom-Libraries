@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 
-namespace SceneManager
+namespace Scenes
 {
   public abstract class GameScene
   {

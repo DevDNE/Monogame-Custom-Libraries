@@ -1,6 +1,6 @@
 using System;
 
-namespace DebugManager
+namespace Debugging
 {
   public class Logging
   {
