@@ -4,58 +4,53 @@ using Microsoft.Xna.Framework.Content;
 using System.Collections.Generic;
 using System;
 
-namespace Managers
+namespace Managers;
+public class SoundManager
 {
-    public class SoundManager
+    private Dictionary<string, SoundEffect> soundEffects= new Dictionary<string, SoundEffect>();
+    private Dictionary<string, Song> songs = new Dictionary<string, Song>();
+    private ContentManager content;
+
+    public void LoadSoundEffect(string name)
     {
-        private Dictionary<string, SoundEffect> soundEffects;
-        private Dictionary<string, Song> songs;
-        private ContentManager content;
+        Console.WriteLine("Loading sound effect: " + name);
+        SoundEffect soundEffect = content.Load<SoundEffect>(name);
+        soundEffects[name] = soundEffect;
+    }
 
-        public SoundManager(ContentManager content)
+    public void PlaySoundEffect(string name)
+    {
+        if (soundEffects.ContainsKey(name))
         {
-            this.content = content;
-            soundEffects = new Dictionary<string, SoundEffect>();
-            songs = new Dictionary<string, Song>();
+            soundEffects[name].Play();
         }
+    }
 
-        public void LoadSoundEffect(string name)
-        {
-            Console.WriteLine("Loading sound effect: " + name);
-            SoundEffect soundEffect = content.Load<SoundEffect>(name);
-            soundEffects[name] = soundEffect;
-        }
+    public void LoadSong(string name)
+    {
+        Song song = content.Load<Song>(name);
+        songs[name] = song;
+    }
 
-        public void PlaySoundEffect(string name)
+    public void PlaySong(string name)
+    {
+        if (songs.ContainsKey(name))
         {
-            if (soundEffects.ContainsKey(name))
-            {
-                soundEffects[name].Play();
-            }
+            MediaPlayer.Play(songs[name]);
         }
+    }
 
-        public void LoadSong(string name)
-        {
-            Song song = content.Load<Song>(name);
-            songs[name] = song;
-        }
+    public static void PauseSong()
+    {
+        MediaPlayer.Pause();
+    }
 
-        public void PlaySong(string name)
-        {
-            if (songs.ContainsKey(name))
-            {
-                MediaPlayer.Play(songs[name]);
-            }
-        }
+    public static void StopSong()
+    {
+        MediaPlayer.Stop();
+    }
 
-        public static void PauseSong()
-        {
-            MediaPlayer.Pause();
-        }
-
-        public static void StopSong()
-        {
-            MediaPlayer.Stop();
-        }
+    public void LoadContent(ContentManager content) {
+        this.content = content;
     }
 }

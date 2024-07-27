@@ -12,27 +12,27 @@ namespace Scenes
   {
     private ContentManager content;
     private Player _player;
-    public FirstScene(DrawManager drawManager, TextManager textManager, KeyboardInput keyboardInput)
+    public FirstScene()
     {
-      _player = new Player(drawManager, keyboardInput);
+      //_player = new Player(drawManager, keyboardInput);
     }
 
     public override void LoadContent(ContentManager content)
     {
       // Add your content loading logic here
-      _player.LoadContent(content);
+      //_player.LoadContent(content);
     }
 
     public override void UnloadContent()
     {
       // Add your content unloading logic here
-      _player.UnloadContent();
+      //_player.UnloadContent();
     }
 
     public override void Update(GameTime gameTime)
     {
       // Add your update logic here
-      _player.Update(gameTime);
+      //_player.Update(gameTime);
     }
   }
 }

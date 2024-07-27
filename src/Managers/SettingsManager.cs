@@ -3,49 +3,55 @@ using System.IO;
 using Newtonsoft.Json;
 using dotenv.net;
 
-namespace Managers
+// TODO: Settings are not being loaded from the json file
+
+namespace Managers;
+public class SettingsManager
 {
-  public class SettingsManager
+  private readonly string settingsFilePath;
+  public string WindowTitle { get; set; }
+  public int WindowWidth { get; set; }
+  public int WindowHeight { get; set; }
+  public bool IsFullScreen { get; set; }
+  public bool IsBorderless { get; set; }
+  public bool DebugMode { get; set; }
+  public SettingsManager()
   {
-    private readonly string settingsFilePath;
-    public string WindowTitle { get; set; }
-    public int WindowWidth { get; set; }
-    public int WindowHeight { get; set; }
-    public bool IsFullScreen { get; set; }
-    public bool IsBorderless { get; set; }
+    WindowTitle = "My Game - Custom Library";
+    WindowWidth = 800;
+    WindowHeight = 600;
+    IsFullScreen = false;
+    IsBorderless = false;
+    DebugMode = true;
+    DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { "..\\..\\..\\.env" }));
+    settingsFilePath = Environment.GetEnvironmentVariable("SETTINGS_FILE_PATH");
+  }
 
-    // Constructor
-    public SettingsManager()
+  public void SaveSettings()
+  {
+    string json = JsonConvert.SerializeObject(this);
+    File.WriteAllText(settingsFilePath, json);
+  }
+
+  public void LoadSettings()
+  {
+    if (File.Exists(settingsFilePath))
     {
-      WindowTitle = "My Game - Custom Library";
-      WindowWidth = 800;
-      WindowHeight = 600;
-      IsFullScreen = false;
-      IsBorderless = false;
-      DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { "..\\..\\..\\.env" }));
-      settingsFilePath = Environment.GetEnvironmentVariable("SETTINGS_FILE_PATH");
-    }
+      string json = File.ReadAllText(settingsFilePath);
+      SettingsManager settings = JsonConvert.DeserializeObject<SettingsManager>(json);
 
-    public void SaveSettings()
-    {
-      string json = JsonConvert.SerializeObject(this);
-      File.WriteAllText(settingsFilePath, json);
+      // Copy loaded settings to this instance
+      WindowTitle = settings.WindowTitle;
+      WindowWidth = settings.WindowWidth;
+      WindowHeight = settings.WindowHeight;
+      IsFullScreen = settings.IsFullScreen;
+      IsBorderless = settings.IsBorderless;
+      DebugMode = settings.DebugMode;
     }
-
-    public void LoadSettings()
-    {
-      if (File.Exists(settingsFilePath))
-      {
-        string json = File.ReadAllText(settingsFilePath);
-        SettingsManager settings = JsonConvert.DeserializeObject<SettingsManager>(json);
-
-        // Copy loaded settings to this instance
-        WindowTitle = settings.WindowTitle;
-        WindowWidth = settings.WindowWidth;
-        WindowHeight = settings.WindowHeight;
-        IsFullScreen = settings.IsFullScreen;
-        IsBorderless = settings.IsBorderless;
-      }
-    }
+  }
+  
+  public int GetWindowWidth()
+  {
+    return WindowWidth;
   }
 }

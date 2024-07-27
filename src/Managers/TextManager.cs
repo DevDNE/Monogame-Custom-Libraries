@@ -4,64 +4,75 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Graphics;
 
-namespace Managers
+namespace Managers;
+public class TextManager
 {
-  public class TextManager
+  private SpriteFont _font;
+  private Dictionary<string, List<TextElement>> textGroups = new Dictionary<string, List<TextElement>>();
+
+  public List<TextElement> GetTextGroups(string name)
   {
-    private SpriteFont _font;
-    private Dictionary<string, List<TextElement>> textLists;
-
-    public TextManager(SpriteFont font)
+    return textGroups[name];
+  }
+  public void AddText(string group, string text, Vector2 position, Color color)
+  {
+    if (!textGroups.ContainsKey(group))
     {
-      _font = font;
-      textLists = new Dictionary<string, List<TextElement>>();
+      textGroups.Add(group, new List<TextElement>());
     }
 
-    public void AddTextList(string name)
-    {
-      textLists.Add(name, new List<TextElement>());
-    }
-    
-    public void RemoveTextList(string name)
-    {
-      textLists.Remove(name);
-    }
+    textGroups[group].Add(new TextElement(text, position, color, _font));
+  }
 
-    public List<TextElement> GetTextList(string name)
+  public void UpdateText(string groupName, string oldText, string newText, Vector2 position, Color color)
+  {
+    TextElement textElement = textGroups[groupName].Find(t => t.Text == oldText);
+    if (textElement != null)
     {
-      return textLists[name];
+      textElement.Text = newText;
+      textElement.Position = position;
+      textElement.Color = color;
     }
-    public void AddText(string listName, string text, Vector2 position, Color color)
-    {
-      textLists[listName].Add(new TextElement(text, position, color, _font));
-    }
+  }
 
-    public void RemoveText(string listName, string text)
-    {
-      textLists[listName].RemoveAll(t => t.Text == text);
-    }
+  public void RemoveText(string groupName, string text)
+  {
+    textGroups[groupName].RemoveAll(t => t.Text == text);
+  }
 
-    public void Draw(SpriteBatch spriteBatch)
+  public void LoadContent(SpriteFont font)
+  {
+    _font = font;
+  }
+
+  public void Draw(SpriteBatch spriteBatch)
+  {
+    foreach (var textGroup in textGroups)
     {
-      foreach (var textList in textLists)
+      foreach (var textElement in textGroups[textGroup.Key])
       {
-        foreach (var textElement in textLists[textList.Key])
-        {
-          spriteBatch.DrawString(textElement.Font, textElement.Text, textElement.Position, textElement.Color);
-        }
+        spriteBatch.DrawString(textElement.Font, textElement.Text, textElement.Position, textElement.Color);
       }
     }
+  }
 
-    public void ScrollText(string listName)
+  public void ClearGroup(string groupName)
+  {
+    if (textGroups.ContainsKey(groupName))
     {
-      foreach (TextElement item in textLists[listName].ToList()) 
+      textGroups[groupName].Clear();
+    }
+  }
+
+  public void ScrollText(string groupName, int pixelsBetweenLines, int maxLines)
+  {
+    foreach (TextElement item in textGroups[groupName].ToList()) 
+    {
+      if (textGroups[groupName].Count > maxLines)
       {
-        if (textLists[listName].Count > 25)
-        {
-          textLists[listName].RemoveAt(0);
-        }
-        item.Position = new Vector2(item.Position.X, item.Position.Y + 20);
+        textGroups[groupName].RemoveAt(0);
       }
+      item.Position = new Vector2(item.Position.X, item.Position.Y + pixelsBetweenLines);
     }
   }
 }
