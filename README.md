@@ -35,7 +35,7 @@ src/
   MonoGame.GameFramework.Rhythm/        ← 4-lane rhythm game
   MonoGame.GameFramework.VisualNovel/   ← Dialogue-tree VN with save/load
   MonoGame.GameFramework.AutoBattler/   ← Auto-chess shop + combat loop
-  MonoGame.GameFramework.Tests/         ← 122 xUnit tests
+  MonoGame.GameFramework.Tests/         ← 160 xUnit tests
 ```
 
 ## Library (`MonoGame.GameFramework`)
@@ -94,6 +94,12 @@ scripts/smoke-all.sh                           # Launch each of the 9 samples fo
 scripts/new-sample.sh <Name>                   # Scaffold a new sample (copies template/, wires into Game.sln)
 dotnet run --project src/MonoGame.GameFramework.Tools -- lint-all-samples
                                                # Check every sample's source against its spritefont charset
+dotnet run --project src/MonoGame.GameFramework.Tools -- check-content-cache-all
+                                               # Flag .spritefont sources newer than their compiled .xnb
+dotnet run --project src/MonoGame.GameFramework.Tools -- check-versions
+                                               # Diff TargetFramework / package versions across csprojs
+dotnet run --project src/MonoGame.GameFramework.Tools -- check-boot-all
+                                               # Verify each Game1.cs wires up the boot conventions
 ```
 
 ## Tests (`MonoGame.GameFramework.Tests`)

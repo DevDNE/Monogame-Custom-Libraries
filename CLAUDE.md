@@ -111,7 +111,10 @@ Per-game entities are plain classes — the library does not provide a shared en
 **Dev tools** (`src/MonoGame.GameFramework.Tools/`, binary `mgf-tools`):
 - `lint-spritefont --spritefont <path> --project <dir>` — scans a project's C# source for string literals containing characters the spritefont's `CharacterRegion`s don't cover. Prevents the em-dash / curly-quote / accented-letter crash class (FINDINGS §1.10). Approximate by design (regex-based, handles single-line comments and block comments, doesn't fully understand verbatim/interpolated strings — false positives are rare and obvious).
 - `lint-all-samples [--repo <root>]` — lints each `src/MonoGame.GameFramework.*` sample against its own `Content/fonts/Arial.spritefont`. Exits non-zero on any uncovered character.
-- Run: `dotnet run --project src/MonoGame.GameFramework.Tools -- lint-all-samples`
+- `check-content-cache --project <dir>` / `check-content-cache-all [--repo <root>]` — flags `*.spritefont` sources whose mtime is newer than their compiled `.xnb` under `Content/bin/<platform>/Content/`. Catches the FINDINGS §1.10 "MGCB incremental cache skipped the rebuild, build is green, game crashes at runtime" class. Output includes the `rm -rf Content/bin Content/obj && dotnet build` fix hint.
+- `check-versions [--repo <root>]` — XML-parses every `src/**/*.csproj`, reports cross-project `TargetFramework` mismatches and any `PackageReference` appearing at more than one version. Solo packages (e.g. `dotenv.net` in BattleGrid, `xunit`/`FluentAssertions` in Tests) are reported as INFO, not failures. Exits non-zero on any real mismatch.
+- `check-boot --project <dir>` / `check-boot-all [--repo <root>]` — regex-checks each sample's `Game1.cs` for the four boot conventions: `Primitives.Initialize`, DebugOverlay DI resolution + `SetFont`, `!overlay.ShouldSkipUpdate` guard around `GameStateManager.Update`, and `SmokeHarness.Tick()` + `Exit()`. Catches convention drift in new samples.
+- Run any: `dotnet run --project src/MonoGame.GameFramework.Tools -- <command>`
 
 **Scaffolding a new sample** (`scripts/new-sample.sh`):
 - `scripts/new-sample.sh <Name>` copies `template/` → `src/MonoGame.GameFramework.<Name>/`, substitutes the `__SAMPLE__` marker, adds the project to `Game.sln`, builds once.
