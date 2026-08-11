@@ -59,8 +59,12 @@ public class Game1 : Game
     Primitives.Initialize(GraphicsDevice);
     _font = Content.Load<SpriteFont>("fonts/Arial");
     _debugOverlay.SetFont(_font);
+    // Textures load exactly like fonts — the path is relative to Content/ and
+    // drops the extension. See Content/Content.mgcb for the processor settings
+    // that matter for pixel art.
+    Texture2D placeholderSprite = Content.Load<Texture2D>("sprites/placeholder");
 
-    PlayState playState = new(_serviceProvider, _font, ViewportWidth, ViewportHeight);
+    PlayState playState = new(_serviceProvider, _font, placeholderSprite, ViewportWidth, ViewportHeight);
     TitleState titleState = new(
       _serviceProvider, _font, ViewportWidth, ViewportHeight,
       onPlay: () => _gameStateManager.ChangeState(playState),

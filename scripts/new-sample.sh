@@ -53,9 +53,16 @@ sed_inplace() {
     sed -i '' "$@"
   fi
 }
+# Only text files. The template ships binary content (Content/sprites/*.png),
+# and macOS sed aborts with "RE error: illegal byte sequence" the moment it is
+# handed a file containing non-UTF-8 bytes — which, with set -e, kills the
+# scaffold half-created. LC_ALL=C additionally stops sed interpreting bytes as
+# multibyte characters in filenames or content.
 while IFS= read -r -d '' file; do
-  sed_inplace "s/__SAMPLE__/$NAME/g" "$file"
-done < <(find "$PROJ_DIR" -type f -print0)
+  LC_ALL=C sed_inplace "s/__SAMPLE__/$NAME/g" "$file"
+done < <(find "$PROJ_DIR" -type f \
+  \( -name '*.cs' -o -name '*.csproj' -o -name '*.mgcb' \
+     -o -name '*.spritefont' -o -name '*.json' -o -name '*.md' \) -print0)
 
 echo "Adding to Game.sln ..."
 dotnet sln Game.sln add "$CSPROJ"

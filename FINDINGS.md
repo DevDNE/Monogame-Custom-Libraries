@@ -204,6 +204,23 @@ BattleGrid hit this when adding the chip-selection overlay. Pushing a `ChipSelec
 
 **Recommendation**: split `IsActive` into `IsUpdating` and `IsVisible` (or similar). `PushState` sets the old top's `IsUpdating = false` but leaves `IsVisible = true`. That lets overlay-style states work as intended. Medium change; update the library tests accordingly.
 
+### 1.17 The nine-game sample had a systematic blind spot: everything was a rectangle (NEW 2026-08-11)
+
+Every one of the nine samples rendered coloured rectangles via `Primitives`. Not one loaded a texture. That means the conclusions in §5 and §8 about sprite-related surface — most directly Tier B #2, "delete `SpriteSheet.Animated`, zero consumers" — were drawn from nine consumers that were **all simplified in the same direction**. "No game needed frame cycling" was never evidence that games don't need it; it was evidence that rectangle-games don't.
+
+This is worth stating plainly because the methodology elsewhere in this document is sound: build a consumer, watch what it demands, extract at the second demand. That process is only as good as the consumers' representativeness, and here every consumer shared one deliberate shortcut that suppressed demand for the single subsystem every genre needs.
+
+Platformer now renders a real 32×32 sprite (2026-08-11). What that produced:
+
+1. **Collision bounds and sprite bounds are different things, and rectangles hid it.** The player's box is 32×48; the art is 32×32. Pixel art cannot be stretched 32→48 to reconcile them — non-uniform scaling gives some pixels one screen-pixel and others two, which is visibly wrong. The frame is drawn feet-anchored at native size, leaving 16px of real collision above the head, so the player clips ceilings before the art touches them. In all nine rectangle-games the rectangle was simultaneously the hitbox and the visual, so this distinction never had to exist. **Any future entity carries two rects, not one.**
+2. **`TextureFormat` must be `Color` for sprites, not the `Compressed` used for fonts.** DXT is block compression; it mangles the hard 1px colour boundaries pixel art is made of. The tell is artifact size — a 32×32 `Color` texture lands at 4181 bytes (32·32·4 + header). Anything much smaller means compression silently happened.
+3. **`SamplerState.PointClamp` is missing almost everywhere.** Only 2 of 9 games pass it, and both only incidentally, because they happen to use a camera transform. The other 7 call bare `Begin()` and would blur pixel art on contact. This is a default that should be right in the template rather than rediscovered per game.
+4. **The demand is state→frame mapping, not time-based cycling.** The hero's art has one frame per walk direction; only the blink is time-driven. So this consumer still does *not* justify restoring `SpriteSheet.Animated` — it justifies a `state → frame` selector, which is currently four lines in `Player.CurrentFrame` and not worth extracting from one consumer.
+
+**Open question for consumer #2**: a genuine multi-frame walk cycle is what would decide the animator question, and the current art cannot answer it either way. If the second sprite-using game reuses this art, the exercise will conclude "no animator needed" from art that could never have shown otherwise. Extend the art to a real cycle first, or pick a second game whose art has one.
+
+**Status of Tier B #2 (`SpriteSheet.Animated`)**: still correctly deleted. One consumer, and it wants frame *selection*, not frame *cycling*. Revisit at the second consumer, not before.
+
 ---
 
 ## §2 — Platformer-specific patterns (genre-module candidates)

@@ -81,6 +81,14 @@ The library is organized into domain folders, each with a matching namespace. Se
 
 Per-game entities are plain classes — the library does not provide a shared entity base (the previous `Core.Entity` was deleted after 8 of 9 sample games skipped it). Shape your game's entities to fit the game; no inheritance required.
 
+**Sprites and content** (added 2026-08-11 with Platformer's hero; see FINDINGS §1.17):
+- **Asset layout**: `assets/` holds authoring sources (`.aseprite`) — committed, never compiled. Per-game `Content/sprites/` holds the exported PNGs the pipeline consumes. Frames are tiny (~350 bytes), so duplicating an export across games is cheaper than a shared-content-linking scheme.
+- **`TextureFormat=Color`, never `Compressed`.** The spritefont blocks use `Compressed` (DXT); that's block compression and it mangles the hard 1px boundaries pixel art depends on. Also keep `ResizeToPowerOfTwo`/`MakeSquare` at `False` so a 32×32 source stays 32×32 — padding silently shifts every source rectangle. Copy the commented block in `template/Content/Content.mgcb`.
+- **`SamplerState.PointClamp` on every `Begin` that draws sprites.** The default `LinearClamp` blurs pixel art at any scale ≠ 1:1. Only Platformer and Shooter currently pass it (both incidentally, via camera transforms); the other 7 samples would blur on contact if given a texture. The template now sets it.
+- **Scale by whole numbers only.** Non-integer scaling makes some pixels 1 screen-pixel and others 2.
+- **An entity has two rectangles, not one**: its collision box and its sprite destination. They are rarely the same size — Platformer's player collides as 32×48 but draws 32×32, feet-anchored (`Player.SpriteDestination`). The rectangle-only samples conflated these; new entity code shouldn't.
+- **No library sprite/animation type yet, by design.** Platformer is consumer #1 and wants state→frame *selection*, not frame *cycling*. `SpriteSheet.Animated` stays deleted until a second consumer with a real multi-frame cycle justifies it.
+
 **Rendering path — direct-draw is the default, `DrawManager` is opt-in**: only 2 of 9 sample games (BattleGrid, Platformer) register sprites with `DrawManager`; the other 7 call `SpriteBatch.Draw`/`Primitives.DrawRectangle` inline in their `Draw` overrides and are none the worse for it. Don't reach for `DrawManager` by default. It earns its place when you have a stable set of sprites whose draw order and tint you want managed centrally; for entities whose position is recomputed every frame, direct-draw is simpler and is what most of the samples do. (FINDINGS §8 Tier C #3.)
 
 **SpriteSheet construction**: single factory, single frame.
@@ -121,7 +129,9 @@ Per-game entities are plain classes — the library does not provide a shared en
 
 **Scaffolding a new sample** (`scripts/new-sample.sh`):
 - `scripts/new-sample.sh <Name>` copies `template/` → `src/MonoGame.GameFramework.<Name>/`, substitutes the `__SAMPLE__` marker, adds the project to `Game.sln`, builds once.
-- The template wires up `DebugOverlay` + `SmokeHarness` + a `TitleState` that inherits `TitleScreenState` + a stub `PlayState` + a `Content.mgcb` with a pre-widened spritefont charset. Game #10 is one command.
+- The template wires up `DebugOverlay` + `SmokeHarness` + a `TitleState` that inherits `TitleScreenState` + a stub `PlayState` + a `Content.mgcb` with a pre-widened spritefont charset **and a working sprite path** (`Content/sprites/placeholder.png`, correct processor settings, `PointClamp` `Begin`, integer-scaled draw). Game #10 is one command and starts with textures already proven end-to-end.
+- Marker substitution only touches text files (`*.cs`, `*.csproj`, `*.mgcb`, `*.spritefont`, `*.json`, `*.md`). It must stay that way: macOS `sed` aborts with `RE error: illegal byte sequence` on the template's binary PNG, and with `set -e` that leaves a half-created project behind.
+- Verified end-to-end 2026-08-11: scaffolds, substitutes, builds, produces its `.xnb`, passes `check-boot`/`check-content-cache`/`lint-all-samples`, and runs.
 
 **Rendering helpers**:
 - `Rendering.Primitives` — call `Initialize(GraphicsDevice)` once in `Game1.LoadContent`, then use `Primitives.Pixel` or `Primitives.DrawRectangle(sb, rect, color)` anywhere a solid-color rectangle is needed. Avoids re-creating 1×1 textures per entity.
