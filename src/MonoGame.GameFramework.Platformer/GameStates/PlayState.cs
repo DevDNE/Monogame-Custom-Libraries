@@ -16,6 +16,7 @@ public class PlayState : GameState
 
   private readonly KeyboardManager _keyboardManager;
   private readonly SpriteFont _font;
+  private readonly HeroSprites _heroSprites;
   private readonly int _viewportWidth;
   private readonly int _viewportHeight;
 
@@ -26,10 +27,11 @@ public class PlayState : GameState
   private Camera2D _camera;
   private bool _won;
 
-  public PlayState(ServiceProvider serviceProvider, SpriteFont font, int viewportWidth, int viewportHeight)
+  public PlayState(ServiceProvider serviceProvider, SpriteFont font, HeroSprites heroSprites, int viewportWidth, int viewportHeight)
   {
     _keyboardManager = serviceProvider.GetService<KeyboardManager>();
     _font = font;
+    _heroSprites = heroSprites;
     _viewportWidth = viewportWidth;
     _viewportHeight = viewportHeight;
   }
@@ -124,7 +126,11 @@ public class PlayState : GameState
     foreach (Platform p in _platforms) p.Draw(spriteBatch, Primitives.Pixel);
     foreach (Enemy e in _enemies) e.Draw(spriteBatch, Primitives.Pixel);
     _goal.Draw(spriteBatch, Primitives.Pixel);
-    _player.Draw(spriteBatch, Primitives.Pixel);
+    // Drawn last so the sprite sits in front of the rectangle-based world.
+    // Sprites and Primitives share one batch fine — they're both textures to
+    // SpriteBatch — but with SpriteSortMode.Deferred (the default) the call
+    // order IS the draw order, so this line's position matters.
+    _player.Draw(spriteBatch, _heroSprites);
     spriteBatch.End();
 
     if (_won)

@@ -19,15 +19,41 @@ public class Player
   public const int Width = 32;
   public const int Height = 48;
 
+  /// <summary>
+  /// Authored frame size. Note this is NOT Height: the collision box is
+  /// 32x48, the art is 32x32. Pixel art can't be stretched 32->48 to bridge
+  /// that (non-uniform scaling produces uneven pixel sizes), so the frame is
+  /// drawn at native size anchored to the box's feet. See SpriteDestination.
+  /// </summary>
+  public const int SpriteSize = HeroSprites.FrameSize;
+
+  private const float MovingThreshold = 8f;
+  private const float BlinkInterval = 3.2f;
+  private const float BlinkDuration = 0.14f;
+
   public Vector2 Position { get; set; }
   public Vector2 Velocity { get; set; }
   public bool IsGrounded { get; private set; }
 
   public Rectangle Bounds => new((int)Position.X, (int)Position.Y, Width, Height);
 
+  /// <summary>
+  /// Where the sprite is drawn, as distinct from where the player collides.
+  /// Feet-anchored and horizontally centred on the collision box, at native
+  /// resolution. The 16px of collision box above the sprite's head is real —
+  /// the player clips ceilings slightly before the art touches them.
+  /// </summary>
+  public Rectangle SpriteDestination => new(
+    (int)Position.X + (Width - SpriteSize) / 2,
+    Bounds.Bottom - SpriteSize,
+    SpriteSize,
+    SpriteSize);
+
   private readonly Vector2 _spawnPosition;
   private float _coyoteTimer;
   private float _jumpBufferTimer;
+  private float _blinkTimer;
+  private int _facing = 1;
 
   public Player(Vector2 spawnPosition)
   {
@@ -42,11 +68,21 @@ public class Player
     IsGrounded = false;
     _coyoteTimer = 0f;
     _jumpBufferTimer = 0f;
+    _blinkTimer = 0f;
+    _facing = 1;
   }
 
   public void Update(GameTime gameTime, IReadOnlyList<Platform> platforms, float inputX, bool jumpPressed, bool jumpHeld)
   {
     float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+    // Facing latches on the last directional input so the hero keeps facing
+    // the way they were moving after the key is released.
+    if (inputX > 0f) _facing = 1;
+    else if (inputX < 0f) _facing = -1;
+
+    _blinkTimer += dt;
+    if (_blinkTimer >= BlinkInterval + BlinkDuration) _blinkTimer = 0f;
 
     if (IsGrounded) _coyoteTimer = CoyoteTime;
     else _coyoteTimer = MathF.Max(0f, _coyoteTimer - dt);
@@ -129,8 +165,27 @@ public class Player
     return current + MathF.Sign(diff) * step;
   }
 
-  public void Draw(SpriteBatch spriteBatch, Texture2D pixel)
+  /// <summary>
+  /// Maps player state to an authored frame. Pure and graphics-free, so it
+  /// stays unit-testable without a GraphicsDevice — and it's the part worth
+  /// watching for extraction: "entity state selects a frame" is the pattern a
+  /// second sprite-using game would repeat, not the SpriteBatch.Draw call.
+  ///
+  /// Movement reads Velocity rather than raw input so the hero holds the walk
+  /// frame through the deceleration slide and while airborne.
+  /// </summary>
+  public HeroFrame CurrentFrame
   {
-    spriteBatch.Draw(pixel, Bounds, new Color(220, 200, 100));
+    get
+    {
+      if (MathF.Abs(Velocity.X) > MovingThreshold)
+        return _facing < 0 ? HeroFrame.WalkLeft : HeroFrame.WalkRight;
+      return _blinkTimer >= BlinkInterval ? HeroFrame.IdleBlink : HeroFrame.IdleOpen;
+    }
+  }
+
+  public void Draw(SpriteBatch spriteBatch, HeroSprites sprites)
+  {
+    spriteBatch.Draw(sprites[CurrentFrame], SpriteDestination, Color.White);
   }
 }

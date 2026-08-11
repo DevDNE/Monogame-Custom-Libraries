@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Input;
 using MonoGame.GameFramework.Debugging;
 using MonoGame.GameFramework.Input;
 using MonoGame.GameFramework.Lifecycle;
+using MonoGame.GameFramework.Platformer.Entities;
 using MonoGame.GameFramework.Platformer.GameStates;
 using MonoGame.GameFramework.Rendering;
 using MonoGame.GameFramework.Testing;
@@ -59,8 +60,9 @@ public class Game1 : Game
     Primitives.Initialize(GraphicsDevice);
     _font = Content.Load<SpriteFont>("fonts/Arial");
     _debugOverlay.SetFont(_font);
+    HeroSprites heroSprites = HeroSprites.Load(Content);
 
-    PlayState playState = new(_serviceProvider, _font, ViewportWidth, ViewportHeight);
+    PlayState playState = new(_serviceProvider, _font, heroSprites, ViewportWidth, ViewportHeight);
     TitleState titleState = new(
       _serviceProvider, _font, ViewportWidth, ViewportHeight,
       onPlay: () => _gameStateManager.ChangeState(playState),
