@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    name: Library + tools tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,3 +27,45 @@ jobs:
         with:
           name: test-results
           path: '**/test-results.trx'
+
+  build-samples:
+    name: Compile all samples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Restore
+        run: dotnet restore Game.sln
+      # The test job only builds the Tests csproj, so a sample that fails to
+      # compile would otherwise ship green. DesignTimeBuild=true is what gates
+      # MonoGame.Content.Builder.Task's IncludeContent target, so MGCB never
+      # runs and the runner needs no freetype/freeimage natives — we're
+      # compile-checking C#, not producing runnable .xnb content. Don't drop
+      # this flag without adding those system deps.
+      - name: Build all projects (C# only, MGCB skipped)
+        run: dotnet build Game.sln --no-restore --configuration Release -p:DesignTimeBuild=true
+
+  static-checks:
+    name: mgf-tools drift checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      # mgf-tools has no MonoGame dependency, so it builds and runs standalone.
+      # All three checks below are static analysis over checked-in sources and
+      # need no built output. (check-content-cache-all is deliberately omitted:
+      # it compares .spritefont mtimes against compiled .xnb artifacts, and a
+      # fresh checkout has no Content/bin — it would skip every sample and
+      # report a meaningless pass. It stays a local pre-run guard.)
+      - name: Build mgf-tools
+        run: dotnet build src/MonoGame.GameFramework.Tools/MonoGame.GameFramework.Tools.csproj --configuration Release
+      - name: Spritefont charset coverage
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- lint-all-samples
+      - name: csproj TargetFramework / package version drift
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-versions
+      - name: Game1.cs boot conventions
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-boot-all

@@ -21,14 +21,14 @@ src/
   MonoGame.GameFramework.Rhythm/        ← 4-lane rhythm game
   MonoGame.GameFramework.VisualNovel/   ← Dialogue-tree VN with save/load
   MonoGame.GameFramework.AutoBattler/   ← Auto-chess shop + combat loop
-  MonoGame.GameFramework.Tests/         ← xUnit tests for the library (122 tests)
+  MonoGame.GameFramework.Tests/         ← xUnit tests for the library + tools (185 tests)
 ```
 
 ## Build & Run
 
 ```bash
 dotnet build Game.sln                                                                              # Build all projects
-dotnet test  Game.sln                                                                              # Run all 122 library tests
+dotnet test  Game.sln                                                                              # Run all 185 library + tools tests
 dotnet run --project src/MonoGame.GameFramework.BattleGrid/MonoGame.GameFramework.BattleGrid.csproj   # Run any sample — swap the project name
 dotnet restore                                                                                     # Restore NuGet packages
 ```
@@ -81,6 +81,8 @@ The library is organized into domain folders, each with a matching namespace. Se
 
 Per-game entities are plain classes — the library does not provide a shared entity base (the previous `Core.Entity` was deleted after 8 of 9 sample games skipped it). Shape your game's entities to fit the game; no inheritance required.
 
+**Rendering path — direct-draw is the default, `DrawManager` is opt-in**: only 2 of 9 sample games (BattleGrid, Platformer) register sprites with `DrawManager`; the other 7 call `SpriteBatch.Draw`/`Primitives.DrawRectangle` inline in their `Draw` overrides and are none the worse for it. Don't reach for `DrawManager` by default. It earns its place when you have a stable set of sprites whose draw order and tint you want managed centrally; for entities whose position is recomputed every frame, direct-draw is simpler and is what most of the samples do. (FINDINGS §8 Tier C #3.)
+
 **SpriteSheet construction**: single factory, single frame.
 - `SpriteSheet.Static(texture, destinationFrame, sourceFrame: ..., name: ...)` — creates a static (non-animated) sprite.
 - `SpriteSheet.Tint` is mutable (defaults to `Color.White`); `DrawManager` respects it, so runtime tint/flash/fade works without replacing the sprite.
@@ -107,6 +109,7 @@ Per-game entities are plain classes — the library does not provide a shared en
 - `Program.cs` parses `--exit-after N` from argv and pokes `ExitAfterFrames` on the DI-registered `SmokeHarness`. `Game1.Update` calls `_smoke.Tick()` and `Exit()`s when the budget runs out. Disabled by default (nothing happens without the flag).
 - Run one game: `dotnet run --project src/MonoGame.GameFramework.Shooter/MonoGame.GameFramework.Shooter.csproj -- --exit-after 60`
 - Run all 9: `scripts/smoke-all.sh [frames] [timeout_seconds]` — builds the solution, launches each sample with a perl-based wall-clock timeout, tails the log on any failure. Catches init-time crashes the unit suite can't see (SpriteFont charset issues, content-pipeline cache staleness, service-resolution failures, LoadContent throws).
+- **Requires a GUI session.** Run it from a Terminal you're logged into — not over SSH, and not from an agent/background shell. Each sample opens an SDL window; with no window server to composite it, the process gets past init and content-load, then blocks forever in `Cocoa_GL_SwapWindow` → `SDL_CondWait` waiting on a vsync. Every sample then times out with `rc=142` and a **zero-byte log**, which looks identical to a mass crash. If you see that pattern, check where you're running it before debugging the games. This is also why smoke isn't in CI — a headless runner needs a virtual display (xvfb).
 
 **Dev tools** (`src/MonoGame.GameFramework.Tools/`, binary `mgf-tools`):
 - `lint-spritefont --spritefont <path> --project <dir>` — scans a project's C# source for string literals containing characters the spritefont's `CharacterRegion`s don't cover. Prevents the em-dash / curly-quote / accented-letter crash class (FINDINGS §1.10). Approximate by design (regex-based, handles single-line comments and block comments, doesn't fully understand verbatim/interpolated strings — false positives are rare and obvious).
