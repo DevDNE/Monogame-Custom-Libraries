@@ -135,7 +135,10 @@ public class PlayState : GameState
 
     if (_won)
     {
-      spriteBatch.Begin();
+      // Explicit sampler even though this batch currently draws only text and
+      // a flat rect: the default LinearClamp would blur any sprite later added
+      // to the overlay, and silently.
+      spriteBatch.Begin(samplerState: SamplerState.PointClamp);
       const string line1 = "You Win!";
       const string line2 = "Press R to play again";
       Vector2 size1 = _font.MeasureString(line1);

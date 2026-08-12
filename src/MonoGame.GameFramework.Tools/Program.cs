@@ -19,6 +19,8 @@ public static class Program
       "check-versions" => RunVersions(args[1..]),
       "check-boot" => RunBoot(args[1..]),
       "check-boot-all" => RunBootAll(args[1..]),
+      "check-sprites" => RunSprites(args[1..]),
+      "check-sprites-all" => RunSpritesAll(args[1..]),
       _ => UnknownCommand(args[0]),
     };
   }
@@ -60,6 +62,84 @@ public static class Program
     Console.WriteLine();
     Console.WriteLine("  check-boot-all [--repo <root>]");
     Console.WriteLine("      Run the boot check across every sample under src/.");
+    Console.WriteLine();
+    Console.WriteLine("  check-sprites --project <dir>");
+    Console.WriteLine("      For projects that ship textures: verify TextureFormat=Color, no");
+    Console.WriteLine("      power-of-two padding, and no bare SpriteBatch.Begin() (which");
+    Console.WriteLine("      defaults to LinearClamp and blurs pixel art). Projects with no");
+    Console.WriteLine("      textures are skipped.");
+    Console.WriteLine();
+    Console.WriteLine("  check-sprites-all [--repo <root>]");
+    Console.WriteLine("      Run the sprite-convention check across every sample under src/.");
+  }
+
+  static int RunSprites(string[] args)
+  {
+    string project = ParseProject(args);
+    if (project == null)
+    {
+      Console.Error.WriteLine("usage: check-sprites --project <dir>");
+      return 2;
+    }
+    // ReportSprites returns a violation count so the -all variant can total
+    // them; collapse it to 0/1 here to match the other single-project commands
+    // (and because an exit status of exactly 256 would wrap to success).
+    int violations = ReportSprites(Path.GetFileName(Path.GetFullPath(project)), SpriteConventionChecker.Check(project), verbose: true);
+    return violations == 0 ? 0 : 1;
+  }
+
+  static int RunSpritesAll(string[] args)
+  {
+    string repo = ParseRepo(args);
+    string src = Path.Combine(repo, "src");
+    if (!Directory.Exists(src))
+    {
+      Console.Error.WriteLine($"src/ directory not found at {Path.GetFullPath(src)}");
+      return 2;
+    }
+
+    int totalViolations = 0;
+    int withTextures = 0;
+    int skipped = 0;
+    foreach (string dir in Directory.EnumerateDirectories(src, "MonoGame.GameFramework.*"))
+    {
+      string name = Path.GetFileName(dir);
+      if (name.EndsWith(".Tests") || name.EndsWith(".Tools")) continue;
+
+      SpriteConventionChecker.CheckResult result = SpriteConventionChecker.Check(dir);
+      if (!result.HasTextures)
+      {
+        Console.WriteLine($"-- {name} (no textures, skipped)");
+        skipped++;
+        continue;
+      }
+      withTextures++;
+      totalViolations += ReportSprites(name, result, verbose: true);
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"{withTextures} sample(s) with textures, {skipped} skipped, {totalViolations} violation(s) total.");
+    return totalViolations == 0 ? 0 : 1;
+  }
+
+  static int ReportSprites(string name, SpriteConventionChecker.CheckResult result, bool verbose)
+  {
+    if (!result.HasTextures)
+    {
+      if (verbose) Console.WriteLine($"{name}: no textures in Content.mgcb, nothing to check.");
+      return 0;
+    }
+    if (result.Violations.Count == 0)
+    {
+      if (verbose) Console.WriteLine($"ok {name}  ({result.TextureAssets.Count} texture(s))");
+      return 0;
+    }
+    Console.WriteLine($"FAIL {name}  ({result.Violations.Count} violation(s))");
+    foreach (SpriteConventionChecker.Violation v in result.Violations)
+    {
+      Console.WriteLine($"  {v.Description}");
+    }
+    return result.Violations.Count;
   }
 
   static int RunLint(string[] args)

@@ -35,7 +35,7 @@ src/
   MonoGame.GameFramework.Rhythm/        ← 4-lane rhythm game
   MonoGame.GameFramework.VisualNovel/   ← Dialogue-tree VN with save/load
   MonoGame.GameFramework.AutoBattler/   ← Auto-chess shop + combat loop
-  MonoGame.GameFramework.Tests/         ← 160 xUnit tests
+  MonoGame.GameFramework.Tests/         ← 196 xUnit tests
 ```
 
 ## Library (`MonoGame.GameFramework`)
@@ -88,7 +88,7 @@ All 9 title screens inherit from `Lifecycle.TitleScreenState` (override `Backgro
 
 ```bash
 dotnet build Game.sln                          # Build all projects
-dotnet test  Game.sln                          # Run the 185 library + tools tests
+dotnet test  Game.sln                          # Run the 196 library + tools tests
 dotnet restore                                 # Restore NuGet packages
 scripts/smoke-all.sh                           # Launch each of the 9 samples for 120 frames, fail on crash
                                                # Needs a GUI session — see note below
@@ -101,13 +101,15 @@ dotnet run --project src/MonoGame.GameFramework.Tools -- check-versions
                                                # Diff TargetFramework / package versions across csprojs
 dotnet run --project src/MonoGame.GameFramework.Tools -- check-boot-all
                                                # Verify each Game1.cs wires up the boot conventions
+dotnet run --project src/MonoGame.GameFramework.Tools -- check-sprites-all
+                                               # Pixel-art conventions (texture format, padding, PointClamp)
 ```
 
 **`smoke-all.sh` must be run from a real GUI session** (a Terminal window you're logged into), not over SSH or from a background/agent shell. The samples are DesktopGL, so each one opens an SDL window; without a window server to composite it the process blocks in `Cocoa_GL_SwapWindow` waiting on a vsync that never arrives. The failure is silent and unhelpful — every sample times out with `rc=142` and an empty log, which looks exactly like a mass crash but isn't. The same constraint is why smoke isn't in CI: a headless runner would need a virtual display (xvfb).
 
 ## Tests (`MonoGame.GameFramework.Tests`)
 
-185 xUnit tests with FluentAssertions covering pure-logic pieces: `ObjectPool`, `PooledEntitySet`, `TimerManager`, `Tween`/`Easing`, `TileMap`/`TileLayer` (including `Swap` and `TryWorldToCell`), `GridMath`, `EventManager` (string + typed + `AnyEvent` hook), `SaveSystem`, `Camera2D`, `GameStateManager` lifecycle + `StackDepth`, `UIManager` + `ElementCount`, `SpriteSheet.Tint`, `TitleScreenState` registration/lifecycle, `HpBar` fill-width math, `LogBox` queue/trim, `DebugOverlay` state machine + watches + event tail + FPS rolling average, `SmokeHarness` arg parsing + frame counter, and all four `mgf-tools` checkers (`SpritefontLinter` range parsing + character-coverage detection, `BootChecker` per-convention detection, `ContentCacheChecker` stale-artifact comparison, `VersionChecker` TFM/package drift). Rendering-dependent code (SpriteBatch/SpriteFont/GraphicsDevice) is smoke-tested via the nine sample games, automated by `scripts/smoke-all.sh`.
+196 xUnit tests with FluentAssertions covering pure-logic pieces: `ObjectPool`, `PooledEntitySet`, `TimerManager`, `Tween`/`Easing`, `TileMap`/`TileLayer` (including `Swap` and `TryWorldToCell`), `GridMath`, `EventManager` (string + typed + `AnyEvent` hook), `SaveSystem`, `Camera2D`, `GameStateManager` lifecycle + `StackDepth`, `UIManager` + `ElementCount`, `SpriteSheet.Tint`, `TitleScreenState` registration/lifecycle, `HpBar` fill-width math, `LogBox` queue/trim, `DebugOverlay` state machine + watches + event tail + FPS rolling average, `SmokeHarness` arg parsing + frame counter, and all five `mgf-tools` checkers (`SpritefontLinter` range parsing + character-coverage detection, `BootChecker` per-convention detection, `ContentCacheChecker` stale-artifact comparison, `VersionChecker` TFM/package drift, `SpriteConventionChecker` mgcb texture-format/padding parsing + bare-`Begin()` detection). Rendering-dependent code (SpriteBatch/SpriteFont/GraphicsDevice) is smoke-tested via the nine sample games, automated by `scripts/smoke-all.sh`.
 
 ## History & design rationale
 

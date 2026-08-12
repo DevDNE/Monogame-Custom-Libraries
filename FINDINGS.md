@@ -221,6 +221,10 @@ Platformer now renders a real 32×32 sprite (2026-08-11). What that produced:
 
 **Status of Tier B #2 (`SpriteSheet.Animated`)**: still correctly deleted. One consumer, and it wants frame *selection*, not frame *cycling*. Revisit at the second consumer, not before.
 
+> **Regression guard added 2026-08-11**: findings (2) and (3) above are now enforced rather than documented. `mgf-tools check-sprites-all` fails on a sprite built with `TextureFormat=Compressed`, on `ResizeToPowerOfTwo`/`MakeSquare` padding, and on a bare `SpriteBatch.Begin()` in a project that ships textures. It's self-limiting — a project with no `TextureImporter` blocks is skipped — so the seven rectangle-only samples stay silent and no speculative churn was needed to "fix" them; the guard simply fires the moment one gains a sprite. It caught a real bare `Begin()` in Platformer's own win-overlay on its first run. Finding (1), collision-vs-sprite bounds, is a design fact rather than a checkable rule, so it lives in CLAUDE.md instead.
+>
+> This follows the §1.10 precedent: the durable fix for a silent, build-green failure class is a checker, not a paragraph. Both are now in CI.
+
 ---
 
 ## §2 — Platformer-specific patterns (genre-module candidates)

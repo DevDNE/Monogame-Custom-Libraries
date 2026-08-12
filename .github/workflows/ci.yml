@@ -69,3 +69,7 @@ jobs:
         run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-versions
       - name: Game1.cs boot conventions
         run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-boot-all
+      # Self-limiting: samples with no textures in their .mgcb are skipped, so
+      # this stays silent until a game actually ships sprites.
+      - name: Pixel-art sprite conventions
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-sprites-all

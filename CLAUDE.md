@@ -21,14 +21,14 @@ src/
   MonoGame.GameFramework.Rhythm/        ← 4-lane rhythm game
   MonoGame.GameFramework.VisualNovel/   ← Dialogue-tree VN with save/load
   MonoGame.GameFramework.AutoBattler/   ← Auto-chess shop + combat loop
-  MonoGame.GameFramework.Tests/         ← xUnit tests for the library + tools (185 tests)
+  MonoGame.GameFramework.Tests/         ← xUnit tests for the library + tools (196 tests)
 ```
 
 ## Build & Run
 
 ```bash
 dotnet build Game.sln                                                                              # Build all projects
-dotnet test  Game.sln                                                                              # Run all 185 library + tools tests
+dotnet test  Game.sln                                                                              # Run all 196 library + tools tests
 dotnet run --project src/MonoGame.GameFramework.BattleGrid/MonoGame.GameFramework.BattleGrid.csproj   # Run any sample — swap the project name
 dotnet restore                                                                                     # Restore NuGet packages
 ```
@@ -125,6 +125,7 @@ Per-game entities are plain classes — the library does not provide a shared en
 - `check-content-cache --project <dir>` / `check-content-cache-all [--repo <root>]` — flags `*.spritefont` sources whose mtime is newer than their compiled `.xnb` under `Content/bin/<platform>/Content/`. Catches the FINDINGS §1.10 "MGCB incremental cache skipped the rebuild, build is green, game crashes at runtime" class. Output includes the `rm -rf Content/bin Content/obj && dotnet build` fix hint.
 - `check-versions [--repo <root>]` — XML-parses every `src/**/*.csproj`, reports cross-project `TargetFramework` mismatches and any `PackageReference` appearing at more than one version. Solo packages (e.g. `dotenv.net` in BattleGrid, `xunit`/`FluentAssertions` in Tests) are reported as INFO, not failures. Exits non-zero on any real mismatch.
 - `check-boot --project <dir>` / `check-boot-all [--repo <root>]` — regex-checks each sample's `Game1.cs` for the four boot conventions: `Primitives.Initialize`, DebugOverlay DI resolution + `SetFont`, `!overlay.ShouldSkipUpdate` guard around `GameStateManager.Update`, and `SmokeHarness.Tick()` + `Exit()`. Catches convention drift in new samples.
+- `check-sprites --project <dir>` / `check-sprites-all [--repo <root>]` — enforces the pixel-art conventions that are silently wrong by default and produce no build error (FINDINGS §1.17): `TextureFormat=Compressed` on a sprite, `ResizeToPowerOfTwo`/`MakeSquare` padding, and bare `SpriteBatch.Begin()` in a project that ships textures. **Self-limiting** — a project with no `TextureImporter` blocks in its `.mgcb` is skipped entirely, so the rectangle-only samples stay silent until they actually gain sprites. `Begin(...)` with any arguments is left alone deliberately: deciding whether an arbitrary overload passes a sampler is the compiler's job, and a false CI failure is worse than a missed warning.
 - Run any: `dotnet run --project src/MonoGame.GameFramework.Tools -- <command>`
 
 **Scaffolding a new sample** (`scripts/new-sample.sh`):
