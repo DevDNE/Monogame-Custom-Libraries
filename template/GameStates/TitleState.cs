@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoGame.GameFramework.Lifecycle;
+using MonoGame.GameFramework.Rendering;
 
 namespace MonoGame.GameFramework.__SAMPLE__.GameStates;
 
@@ -12,9 +13,14 @@ public class TitleState : TitleScreenState
   private readonly Action _onPlay;
   private readonly Action _onQuit;
 
-  public TitleState(ServiceProvider sp, SpriteFont font, int vw, int vh, Action onPlay, Action onQuit)
+  private readonly NineSlice _frame;
+
+  public TitleState(
+    ServiceProvider sp, SpriteFont font, NineSlice frame, int vw, int vh,
+    Action onPlay, Action onQuit)
     : base(sp, font, vw, vh)
   {
+    _frame = frame;
     _onPlay = onPlay;
     _onQuit = onQuit;
   }
@@ -23,6 +29,15 @@ public class TitleState : TitleScreenState
   protected override string TitleText => "__SAMPLE__";
   protected override string SubtitleText => "(replace me)";
   protected override string HintText => "Click Play to begin, Esc to quit.";
+
+  // Sprite-skinned buttons out of Content/sprites/ui-frame.png. Drop this
+  // override and the base class falls back to flat rectangles — everything in
+  // the skin is opt-in, so nothing breaks if you delete the art.
+  protected override NineSlice ButtonFrame => _frame;
+  protected override int PixelScale => 2;
+  protected override Color TitleColor => new(250, 200, 134);
+  protected override Color SubtitleColor => new(164, 174, 194);
+  protected override Color HoverButtonFrameTint => new(250, 200, 134);
 
   protected override IReadOnlyList<ButtonSpec> GetButtons() => new[]
   {

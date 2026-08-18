@@ -37,6 +37,12 @@
 # pixel art the moment it's scaled.
 # ---------------------------------------------------------------------------
 
+# Pixel-art sprites. TextureFormat MUST stay Color — the Compressed (DXT)
+# setting used for the font above is block-compression, which mangles hard
+# 1px colour boundaries and leaves visible artefacts on small art.
+# ResizeToPowerOfTwo/MakeSquare stay False so a 32x32 source stays 32x32;
+# padding would shift every source rectangle. check-sprites enforces all three.
+
 #begin sprites/placeholder.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -48,3 +54,15 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:sprites/placeholder.png
+
+#begin sprites/ui-frame.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:sprites/ui-frame.png

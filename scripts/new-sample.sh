@@ -62,7 +62,8 @@ while IFS= read -r -d '' file; do
   LC_ALL=C sed_inplace "s/__SAMPLE__/$NAME/g" "$file"
 done < <(find "$PROJ_DIR" -type f \
   \( -name '*.cs' -o -name '*.csproj' -o -name '*.mgcb' \
-     -o -name '*.spritefont' -o -name '*.json' -o -name '*.md' \) -print0)
+     -o -name '*.spritefont' -o -name '*.json' -o -name '*.md' \
+     -o -name '*.pix' -o -name '*.gpl' \) -print0)
 
 echo "Adding to Game.sln ..."
 dotnet sln Game.sln add "$CSPROJ"

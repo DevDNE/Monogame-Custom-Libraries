@@ -63,10 +63,13 @@ public class Game1 : Game
     // drops the extension. See Content/Content.mgcb for the processor settings
     // that matter for pixel art.
     Texture2D placeholderSprite = Content.Load<Texture2D>("sprites/placeholder");
+    // A nine-slice needs the corner size the art was drawn with — 4px here.
+    // See Content/sprites/ui-frame.pix.
+    NineSlice uiFrame = new(Content.Load<Texture2D>("sprites/ui-frame"), border: 4);
 
     PlayState playState = new(_serviceProvider, _font, placeholderSprite, ViewportWidth, ViewportHeight);
     TitleState titleState = new(
-      _serviceProvider, _font, ViewportWidth, ViewportHeight,
+      _serviceProvider, _font, uiFrame, ViewportWidth, ViewportHeight,
       onPlay: () => _gameStateManager.ChangeState(playState),
       onQuit: Exit);
     _gameStateManager.PushState(titleState);

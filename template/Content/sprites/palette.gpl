@@ -1,0 +1,40 @@
+GIMP Palette
+Name: __SAMPLE__ — starter palette
+Columns: 5
+#
+# REPLACE THIS. It is a working palette, not a good one for your game: three
+# neutral-ish ramps that will render anything and commit to nothing.
+#
+# Every sample in this repo carries its own palette, and that is the whole
+# reason nine games built on one library do not look like one game. Look at
+# src/MonoGame.GameFramework.Roguelike/Content/sprites/palette.gpl for a
+# palette that is doing real work — six steps of blue-grey and almost no hue,
+# because at 60x34 tiles value *is* the level geometry.
+#
+# Two rules, both enforced:
+#
+#   * The first entry must stay exactly as it is. `outline` #1A1A1A is the one
+#     colour every palette in the repo shares, and it is what keeps nine art
+#     directions reading as one cast. check-palettes fails without it.
+#
+#   * No two colours may sit in the same hue family at the same lightness.
+#     That is one ramp step drawn twice — invisible to the eye, recorded in
+#     every file, and it turns "the mid blue" into a coin flip.
+#
+# Load it in Aseprite via Palette -> Load Palette, and set the sprite to
+# Indexed colour mode: off-palette pixels then become unpaintable, which beats
+# catching them at the gate.
+#
+ 26  26  26	outline
+ 34  36  46	slate-0-shadow
+ 62  68  84	slate-1
+104 112 132	slate-2
+164 174 194	slate-3-hilite
+ 92  52  40	ember-0-shadow
+158  88  52	ember-1
+216 138  74	ember-2
+250 200 134	ember-3-hilite
+ 30  70  86	tide-0-shadow
+ 46 116 138	tide-1
+ 78 168 190	tide-2
+158 224 236	tide-3-hilite
