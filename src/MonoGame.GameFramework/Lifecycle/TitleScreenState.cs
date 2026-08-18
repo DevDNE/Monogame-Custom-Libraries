@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using MonoGame.GameFramework.Input;
 using MonoGame.GameFramework.Rendering;
 using MonoGame.GameFramework.UI;
 
@@ -16,6 +18,15 @@ public abstract class TitleScreenState : GameState
   protected readonly SpriteFont Font;
   protected readonly int ViewportWidth;
   protected readonly int ViewportHeight;
+
+  // All three may be null: the base takes IServiceProvider so a test can feed a
+  // container holding only a UIManager, and every read below is guarded.
+  private readonly KeyboardManager _keyboard;
+  private readonly GamePadManager _gamePad;
+  private readonly MouseManager _mouse;
+
+  private Vector2 _lastMousePosition;
+  private bool _stickNeutral = true;
 
   private readonly List<(ButtonSpec Spec, SpriteSheet Sprite)> _buttons = new();
 
@@ -97,6 +108,9 @@ public abstract class TitleScreenState : GameState
   protected TitleScreenState(IServiceProvider sp, SpriteFont font, int viewportWidth, int viewportHeight)
   {
     UI = sp.GetService<UIManager>();
+    _keyboard = sp.GetService<KeyboardManager>();
+    _gamePad = sp.GetService<GamePadManager>();
+    _mouse = sp.GetService<MouseManager>();
     Font = font;
     ViewportWidth = viewportWidth;
     ViewportHeight = viewportHeight;
@@ -121,7 +135,154 @@ public abstract class TitleScreenState : GameState
     IsActive = true;
   }
 
-  public override void Update(GameTime gameTime) { }
+  /// <summary>What the player asked the menu to do this frame.</summary>
+  protected enum MenuInput { None, Previous, Next, Activate }
+
+  /// <summary>Set false for a mouse-only screen.</summary>
+  protected virtual bool MenuNavigation => true;
+
+  /// <summary>Fraction of full stick deflection that counts as a press.</summary>
+  protected virtual float StickDeadzone => 0.5f;
+
+  public override void Update(GameTime gameTime)
+  {
+    if (!MenuNavigation || _buttons.Count == 0) return;
+
+    FollowMouse();
+
+    switch (ReadMenuInput())
+    {
+      case MenuInput.Previous: MoveSelection(-1); break;
+      case MenuInput.Next: MoveSelection(+1); break;
+      case MenuInput.Activate: ActivateSelection(); break;
+    }
+  }
+
+  /// <summary>
+  /// Read one menu action from the keyboard and pad.
+  ///
+  /// Virtual so a game can rebind without reimplementing traversal, and so a
+  /// test can drive the menu without a window: KeyboardManager and
+  /// GamePadManager read the real devices, which is exactly the reason nine
+  /// games shipped with a pad manager no test and no player could exercise.
+  /// </summary>
+  protected virtual MenuInput ReadMenuInput()
+  {
+    if (_keyboard != null)
+    {
+      if (_keyboard.WasKeyPressed(Keys.Down) || _keyboard.WasKeyPressed(Keys.S)) return MenuInput.Next;
+      if (_keyboard.WasKeyPressed(Keys.Up) || _keyboard.WasKeyPressed(Keys.W)) return MenuInput.Previous;
+      if (_keyboard.WasKeyPressed(Keys.Enter) || _keyboard.WasKeyPressed(Keys.Space)) return MenuInput.Activate;
+    }
+
+    if (_gamePad == null || !_gamePad.IsGamePadConnected()) return MenuInput.None;
+
+    if (_gamePad.WasGamePadButtonPressed(Buttons.DPadDown)) return MenuInput.Next;
+    if (_gamePad.WasGamePadButtonPressed(Buttons.DPadUp)) return MenuInput.Previous;
+    if (_gamePad.WasGamePadButtonPressed(Buttons.A) || _gamePad.WasGamePadButtonPressed(Buttons.Start))
+      return MenuInput.Activate;
+
+    // The stick has no press event of its own, so held deflection has to be
+    // edged by hand or one nudge scrolls the whole menu at 60 steps a second.
+    float y = _gamePad.GetGamePadLeftThumbstickY();
+    bool neutral = MathF.Abs(y) < StickDeadzone;
+    bool crossed = _stickNeutral && !neutral;
+    _stickNeutral = neutral;
+    if (crossed) return y < 0f ? MenuInput.Next : MenuInput.Previous;
+
+    return MenuInput.None;
+  }
+
+  /// <summary>
+  /// Move the highlight to the next enabled button, wrapping.
+  ///
+  /// Selection lives in <see cref="UIManager.FocusedElement"/> rather than in a
+  /// private index, so the mouse and the keyboard drive one thing instead of
+  /// two that can disagree -- and so the focus API, which had no consumer
+  /// outside its own tests, has one.
+  /// </summary>
+  protected void MoveSelection(int step)
+  {
+    int index = NextEnabledIndex(EnabledFlags(), IndexOfSelection(), step);
+    if (index >= 0) UI?.SetFocus(_buttons[index].Sprite);
+  }
+
+  /// <summary>
+  /// Index of the next enabled entry from <paramref name="current"/>, wrapping,
+  /// or -1 when nothing is enabled. A <paramref name="current"/> of -1 means
+  /// nothing is selected yet and picks the first enabled entry from the end the
+  /// player is moving away from.
+  ///
+  /// Pure, because wrap-plus-skip is where an off-by-one hides: a menu whose
+  /// last entry is disabled stops dead at the bottom, and one with a single
+  /// enabled entry loops forever if the guard counts wrong.
+  /// </summary>
+  public static int NextEnabledIndex(IReadOnlyList<bool> enabled, int current, int step)
+  {
+    if (enabled == null || enabled.Count == 0 || step == 0) return -1;
+    int count = enabled.Count;
+
+    for (int i = 1; i <= count; i++)
+    {
+      int index = current < 0
+        ? (step > 0 ? i - 1 : count - i)
+        : ((current + step * i) % count + count) % count;
+      if (enabled[index]) return index;
+    }
+    return -1;
+  }
+
+  private void ActivateSelection()
+  {
+    int index = IndexOfSelection();
+    if (index < 0) return;
+
+    ButtonSpec spec = _buttons[index].Spec;
+    if (!spec.Enabled || spec.OnClick == null) return;
+
+    // Nothing may touch _buttons after this: the handler is what changes state,
+    // which calls Leaving() and empties the list underneath us.
+    spec.OnClick();
+  }
+
+  /// <summary>
+  /// Let the pointer take the highlight, but only when it actually moves.
+  ///
+  /// Without the movement check a resting mouse re-asserts its button every
+  /// frame and the arrow keys cannot move the highlight at all.
+  /// </summary>
+  private void FollowMouse()
+  {
+    if (_mouse == null || UI == null) return;
+
+    Vector2 position = _mouse.GetMousePosition();
+    if (position == _lastMousePosition) return;
+    _lastMousePosition = position;
+
+    for (int i = 0; i < _buttons.Count; i++)
+    {
+      if (UI.HoveredElement != _buttons[i].Sprite) continue;
+      if (_buttons[i].Spec.Enabled) UI.SetFocus(_buttons[i].Sprite);
+      else UI.ClearFocus();
+      return;
+    }
+    UI.ClearFocus();
+  }
+
+  private int IndexOfSelection()
+  {
+    if (UI?.FocusedElement == null) return -1;
+    for (int i = 0; i < _buttons.Count; i++)
+      if (_buttons[i].Sprite == UI.FocusedElement) return i;
+    return -1;
+  }
+
+  private bool[] EnabledFlags()
+  {
+    bool[] flags = new bool[_buttons.Count];
+    for (int i = 0; i < _buttons.Count; i++) flags[i] = _buttons[i].Spec.Enabled;
+    return flags;
+  }
 
   protected void RefreshButtons()
   {
@@ -132,6 +293,7 @@ public abstract class TitleScreenState : GameState
   private void RegisterButtons()
   {
     IReadOnlyList<ButtonSpec> specs = GetButtons();
+    _stickNeutral = true;
     int cx = ViewportWidth / 2;
     int y = ButtonBlockStartY;
     foreach (ButtonSpec spec in specs)
@@ -146,6 +308,11 @@ public abstract class TitleScreenState : GameState
       _buttons.Add((spec, sprite));
       y += ButtonHeight + ButtonGap;
     }
+
+    // Start on the first enabled entry so a pad or keyboard player has
+    // something to press without hunting for it with a mouse first. Mouse
+    // players see it move to whatever they point at on the first motion.
+    if (MenuNavigation) MoveSelection(+1);
   }
 
   protected virtual SpriteSheet CreateButtonSprite(string id, Rectangle bounds)
@@ -201,7 +368,10 @@ public abstract class TitleScreenState : GameState
 
   private void DrawButton(SpriteBatch spriteBatch, SpriteSheet sprite, ButtonSpec spec)
   {
-    bool hovered = spec.Enabled && UI.HoveredElement == sprite;
+    // One highlight, whichever device moved it. Reading HoveredElement here as
+    // well would light two buttons at once as soon as the pointer rested
+    // somewhere other than the keyboard's selection.
+    bool hovered = spec.Enabled && UI?.FocusedElement == sprite;
     Rectangle bounds = sprite.DestinationFrame;
 
     NineSlice frame = !spec.Enabled ? DisabledButtonFrame : hovered ? HoverButtonFrame : ButtonFrame;

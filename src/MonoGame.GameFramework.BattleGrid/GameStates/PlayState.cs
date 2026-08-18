@@ -52,6 +52,7 @@ public class PlayState : GameState
   private const float SparkDuration = 0.18f;
 
   private BattleScene _battleScene;
+  private GameState _pauseState;
   private Mode _mode = Mode.Playing;
   private Chip[] _availableChips = new Chip[3];
   private float _chipCooldown = 0f;
@@ -74,6 +75,12 @@ public class PlayState : GameState
     _viewportHeight = viewportHeight;
   }
 
+  /// <summary>
+  /// Set once at boot. Injected rather than constructed here because the overlay
+  /// needs the same font and art this state was handed.
+  /// </summary>
+  public void SetPauseState(GameState pauseState) => _pauseState = pauseState;
+
   public override void Entered()
   {
     StartFreshBattle();
@@ -92,14 +99,35 @@ public class PlayState : GameState
   }
 
   public override void Leaving() => _sceneManager.RemoveScene("Battle");
-  public override void Obscuring() { /* keep IsActive true so Draw still runs behind overlays */ }
-  public override void Revealed() => IsActive = true;
+
+  /// <summary>
+  /// Something was pushed on top — the pause overlay. Stop simulating, keep
+  /// drawing. IsVisible is what makes those two separable; holding IsActive
+  /// true instead would have kept the battle running behind the pause menu.
+  /// </summary>
+  public override void Obscuring()
+  {
+    IsActive = false;
+    IsVisible = true;
+  }
+
+  public override void Revealed()
+  {
+    IsActive = true;
+    ClearVisibilityOverride();
+  }
 
   public override void Update(GameTime gameTime)
   {
     if (_keyboardManager.WasKeyPressed(Keys.R))
     {
       RestartBattle();
+      return;
+    }
+
+    if (_keyboardManager.WasKeyPressed(Keys.P) && _pauseState != null)
+    {
+      _gameStateManager.PushState(_pauseState);
       return;
     }
 
@@ -298,7 +326,7 @@ public class PlayState : GameState
     Vector2 enemySize = _font.MeasureString($"HP {enemy.Hp}");
     spriteBatch.DrawString(_font, $"HP {enemy.Hp}", new Vector2(_viewportWidth - 20 - enemySize.X, 46), Color.White);
 
-    string hint = "WASD = move   Space = shoot   Tab = chip   R = restart   Esc = quit";
+    string hint = "WASD = move   Space = shoot   Tab = chip   P = pause   R = restart   Esc = quit";
     Vector2 hintSize = _font.MeasureString(hint);
     spriteBatch.DrawString(_font, hint, new Vector2(_viewportWidth * 0.5f - hintSize.X * 0.5f, _viewportHeight - 30), new Color(200, 200, 215));
 
