@@ -50,6 +50,48 @@ public abstract class TitleScreenState : GameState
   protected virtual string SubtitleText => "";
   protected virtual string HintText => "";
 
+  // ---- Pixel-art skin (all opt-in) ------------------------------------------
+  //
+  // Nine games needed nine title screens that look like nine games, and the
+  // flat-rectangle path below was the reason they all looked like one. Every
+  // hook here defaults to null or to the old behaviour, so a screen that
+  // overrides nothing renders exactly as it did before any of this existed —
+  // which is what made it safe to change a base class with nine live consumers.
+
+  /// <summary>Frame drawn behind each button. Null keeps the flat rectangle.</summary>
+  protected virtual NineSlice ButtonFrame => null;
+
+  /// <summary>Frame for the hovered state. Defaults to the normal frame, tinted.</summary>
+  protected virtual NineSlice HoverButtonFrame => ButtonFrame;
+
+  /// <summary>Frame for a disabled button. Defaults to the normal frame, tinted.</summary>
+  protected virtual NineSlice DisabledButtonFrame => ButtonFrame;
+
+  /// <summary>Tiled behind everything. Null paints <see cref="BackgroundColor"/> flat.</summary>
+  protected virtual Texture2D BackgroundTile => null;
+
+  /// <summary>Whole-number magnification for every sprite on this screen.</summary>
+  protected virtual int PixelScale => 3;
+
+  /// <summary>
+  /// Tint applied to the button frame per state. Tinting one sprite is how a
+  /// game gets three button states out of one 16x16 file; a game wanting truly
+  /// different art per state overrides the frames instead.
+  /// </summary>
+  protected virtual Color ButtonFrameTint => Color.White;
+  protected virtual Color HoverButtonFrameTint => Color.White;
+  protected virtual Color DisabledButtonFrameTint => new(120, 120, 130);
+
+  /// <summary>
+  /// Painted after the background tile and before the buttons. Override for
+  /// parallax layers, a logo, a character standing beside the menu — the parts
+  /// of a title screen that are art rather than layout.
+  /// </summary>
+  protected virtual void DrawBackdrop(SpriteBatch spriteBatch, GameTime gameTime) { }
+
+  /// <summary>Painted after the buttons and text, for foreground trim.</summary>
+  protected virtual void DrawOverlay(SpriteBatch spriteBatch, GameTime gameTime) { }
+
   protected abstract IReadOnlyList<ButtonSpec> GetButtons();
 
   protected TitleScreenState(IServiceProvider sp, SpriteFont font, int viewportWidth, int viewportHeight)
@@ -120,8 +162,17 @@ public abstract class TitleScreenState : GameState
 
   public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
   {
-    spriteBatch.Begin();
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, ViewportWidth, ViewportHeight), BackgroundColor);
+    // PointClamp unconditionally: this base class now draws textures, and the
+    // default LinearClamp blurs every one of them. A screen with no sprites
+    // cannot tell the difference.
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
+    Rectangle viewport = new(0, 0, ViewportWidth, ViewportHeight);
+    Primitives.DrawRectangle(spriteBatch, viewport, BackgroundColor);
+    if (BackgroundTile != null)
+      PixelDraw.Tile(spriteBatch, BackgroundTile, viewport, PixelScale);
+
+    DrawBackdrop(spriteBatch, gameTime);
 
     foreach ((ButtonSpec spec, SpriteSheet sprite) in _buttons)
     {
@@ -144,19 +195,32 @@ public abstract class TitleScreenState : GameState
       spriteBatch.DrawString(Font, HintText, new Vector2(ViewportWidth / 2f - hs.X / 2f, ViewportHeight - 60), HintColor);
     }
 
+    DrawOverlay(spriteBatch, gameTime);
     spriteBatch.End();
   }
 
   private void DrawButton(SpriteBatch spriteBatch, SpriteSheet sprite, ButtonSpec spec)
   {
     bool hovered = spec.Enabled && UI.HoveredElement == sprite;
-    Color bg = !spec.Enabled
-      ? DisabledButtonColor
-      : hovered ? HoverButtonColor : NormalButtonColor;
-    Primitives.DrawRectangle(spriteBatch, sprite.DestinationFrame, bg);
+    Rectangle bounds = sprite.DestinationFrame;
+
+    NineSlice frame = !spec.Enabled ? DisabledButtonFrame : hovered ? HoverButtonFrame : ButtonFrame;
+    if (frame != null)
+    {
+      Color tint = !spec.Enabled ? DisabledButtonFrameTint : hovered ? HoverButtonFrameTint : ButtonFrameTint;
+      frame.Draw(spriteBatch, bounds, PixelScale, tint);
+    }
+    else
+    {
+      Color bg = !spec.Enabled
+        ? DisabledButtonColor
+        : hovered ? HoverButtonColor : NormalButtonColor;
+      Primitives.DrawRectangle(spriteBatch, bounds, bg);
+    }
+
     Vector2 size = Font.MeasureString(spec.Label);
     spriteBatch.DrawString(Font, spec.Label,
-      new Vector2(sprite.DestinationFrame.Center.X - size.X / 2f, sprite.DestinationFrame.Center.Y - size.Y / 2f),
+      new Vector2(bounds.Center.X - size.X / 2f, bounds.Center.Y - size.Y / 2f),
       spec.Enabled ? ButtonLabelColor : DisabledLabelColor);
   }
 }
