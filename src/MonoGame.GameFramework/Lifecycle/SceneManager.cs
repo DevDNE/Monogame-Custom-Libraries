@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Collections.Generic;
 
 namespace MonoGame.GameFramework.Lifecycle;
@@ -17,28 +18,35 @@ public class SceneManager
 
   public void RemoveScene(string name)
   {
-    if (scenes.ContainsKey(name))
-    {
-      scenes[name].UnloadContent();
-      scenes.Remove(name);
-    }
-    else
+    if (!scenes.TryGetValue(name, out GameScene scene))
     {
       throw new KeyNotFoundException($"Scene '{name}' does not exist.");
     }
+
+    scene.UnloadContent();
+    scenes.Remove(name);
+    // Drop the current-scene reference when it is the one being removed.
+    // Leaving it set meant Update and Draw kept calling into a scene whose
+    // content had already been unloaded.
+    if (ReferenceEquals(currentScene, scene)) currentScene = null;
   }
+
   public void LoadScene(string name)
   {
-    if (scenes.ContainsKey(name))
-    {
-      currentScene?.UnloadContent();
-      currentScene = scenes[name];
-      currentScene.LoadContent(_content);
-    }
-    else
+    if (!scenes.TryGetValue(name, out GameScene scene))
     {
       throw new KeyNotFoundException($"Scene '{name}' does not exist.");
     }
+    if (_content == null)
+    {
+      throw new InvalidOperationException(
+        "SceneManager.LoadContent(ContentManager) must be called before LoadScene — " +
+        "otherwise the scene is handed a null ContentManager and fails inside its own LoadContent.");
+    }
+
+    currentScene?.UnloadContent();
+    currentScene = scene;
+    currentScene.LoadContent(_content);
   }
 
   public void LoadContent(ContentManager content)

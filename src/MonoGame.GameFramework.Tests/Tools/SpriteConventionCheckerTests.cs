@@ -154,4 +154,54 @@ public class SpriteConventionCheckerTests
     result.Violations.Should().ContainSingle()
       .Which.Description.Should().StartWith("sprites/c.png");
   }
+
+  [Fact]
+  public void ProjectWithNoMgcbAtAll_IsSharedCode_AndItsSourceIsScanned()
+  {
+    // The blind spot: the checker bailed on the first line when a project had no
+    // Content.mgcb, which is exactly the shape of the shared library — the one
+    // project whose Draw calls run inside every game that does ship textures.
+    // DebugOverlay had a bare Begin() there and nothing ever reported it.
+    string proj = Directory.CreateTempSubdirectory("mgf-sprite-test-").FullName;
+    File.WriteAllText(Path.Combine(proj, "DebugOverlay.cs"),
+      "class X\n{\n  void D()\n  {\n    spriteBatch.Begin();\n  }\n}");
+
+    var result = SpriteConventionChecker.Check(proj);
+
+    result.HasTextures.Should().BeFalse();
+    result.SourceScanned.Should().BeTrue();
+    result.IsSharedCode.Should().BeTrue();
+    result.Violations.Should().ContainSingle()
+      .Which.Description.Should().Contain("DebugOverlay.cs:5")
+      .And.Contain("shared code")
+      .And.Contain("PointClamp");
+  }
+
+  [Fact]
+  public void SharedCodeWithACompliantBegin_IsClean()
+  {
+    string proj = Directory.CreateTempSubdirectory("mgf-sprite-test-").FullName;
+    File.WriteAllText(Path.Combine(proj, "TitleScreenState.cs"),
+      "class X { void D() { spriteBatch.Begin(samplerState: SamplerState.PointClamp); } }");
+
+    var result = SpriteConventionChecker.Check(proj);
+
+    result.IsSharedCode.Should().BeTrue();
+    result.Violations.Should().BeEmpty();
+  }
+
+  [Fact]
+  public void GameThatOptedOutOfSprites_StaysSilent()
+  {
+    // Preserved deliberately: a project with an .mgcb that declares no textures
+    // has chosen not to have sprites, and there is nothing to get wrong.
+    string proj = WriteProject(FontBlock, "class X { void D() { sb.Begin(); } }");
+    var result = SpriteConventionChecker.Check(proj);
+
+    result.HasTextures.Should().BeFalse();
+    result.SourceScanned.Should().BeFalse();
+    result.IsSharedCode.Should().BeFalse();
+    result.Violations.Should().BeEmpty();
+  }
+
 }

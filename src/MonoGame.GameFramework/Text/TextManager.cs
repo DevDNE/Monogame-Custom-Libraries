@@ -9,6 +9,20 @@ public class TextManager
   private readonly List<TextElement> _elements = new();
   private int _nextId = 1;
 
+  /// <summary>Registered elements, in insertion order. Inspection seam for tests and debugging.</summary>
+  public IReadOnlyList<TextElement> Elements => _elements;
+
+  /// <summary>The element behind a handle, or null if it has been removed.</summary>
+  public TextElement Find(TextHandle handle) => FindById(handle.Id);
+
+  /// <summary>
+  /// The font <see cref="Draw"/> would use: the element's own if it captured one,
+  /// otherwise whatever the manager has loaded now. Exposed because the fallback
+  /// is the fix for text registered before LoadContent, and asserting it through
+  /// Draw would need a GraphicsDevice.
+  /// </summary>
+  public SpriteFont ResolveFont(TextElement element) => element?.Font ?? _font;
+
   public void LoadContent(SpriteFont font)
   {
     _font = font;
@@ -58,7 +72,14 @@ public class TextManager
   {
     foreach (TextElement el in _elements)
     {
-      spriteBatch.DrawString(el.Font, el.Text, el.Position, el.Color);
+      // Fall back to the manager's current font. AddText captures whatever font
+      // was loaded at the time, which is null for anything registered before
+      // LoadContent — and LoadContent did not backfill, so those elements kept
+      // a null font forever and threw here, one frame away from the call that
+      // actually caused it.
+      SpriteFont font = ResolveFont(el);
+      if (font == null || el.Text == null) continue;
+      spriteBatch.DrawString(font, el.Text, el.Position, el.Color);
     }
   }
 

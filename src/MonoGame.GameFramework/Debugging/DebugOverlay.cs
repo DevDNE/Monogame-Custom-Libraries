@@ -191,7 +191,11 @@ public sealed class DebugOverlay
       return;
     }
 
-    spriteBatch.Begin();
+    // PointClamp, not the default LinearClamp. The overlay draws only text and
+    // solid rectangles today, but it draws them inside nine games that ship
+    // pixel art, and the first sprite added here would otherwise be silently
+    // blurred. This is the rule check-sprites enforces everywhere it can see.
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
     // Main panel on the top-left
     Rectangle panel = new(8, 8, 360, 240);

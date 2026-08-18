@@ -29,11 +29,27 @@ public class EventManager
 
   public void Unsubscribe(string eventName, EventHandler<GameEventArgs> handler)
   {
-    if (eventHandlers.ContainsKey(eventName))
-    {
-      eventHandlers[eventName] -= handler;
-    }
+    if (!eventHandlers.TryGetValue(eventName, out EventHandler<GameEventArgs> existing)) return;
+    EventHandler<GameEventArgs> updated = existing - handler;
+    // Drop the key once the last handler goes, rather than leaving a null
+    // value behind. TriggerEvent null-guards either way, but a long session
+    // that subscribes and unsubscribes per state would otherwise grow this
+    // dictionary forever. Matches what Unsubscribe<T> below already does.
+    if (updated == null) eventHandlers.Remove(eventName);
+    else eventHandlers[eventName] = updated;
   }
+
+  /// <summary>
+  /// Whether anything is currently subscribed to <paramref name="eventName"/>.
+  /// Also the observable form of "unsubscribing the last handler drops the key
+  /// rather than leaving a null behind".
+  /// </summary>
+  public bool HasSubscribers(string eventName)
+    => eventHandlers.TryGetValue(eventName, out EventHandler<GameEventArgs> h) && h != null;
+
+  /// <summary>Whether anything is currently subscribed to <typeparamref name="T"/>.</summary>
+  public bool HasSubscribers<T>() where T : class
+    => typedHandlers.TryGetValue(typeof(T), out Delegate d) && d != null;
 
   public void TriggerEvent(string eventName, object sender, GameEventArgs args)
   {
@@ -64,6 +80,14 @@ public class EventManager
   {
     if (typedHandlers.TryGetValue(typeof(T), out Delegate existing))
       ((Action<T>)existing)?.Invoke(payload);
-    AnyEvent?.Invoke(typeof(T).Name, payload, new GameEventArgs(typeof(T).Name));
+
+    // Only build the diagnostic args when something is actually listening.
+    // AnyEvent is normally unsubscribed outside the debug overlay, and a
+    // combat loop publishing a damage event per tick should not allocate a
+    // name string and an args object for nobody.
+    Action<string, object, GameEventArgs> any = AnyEvent;
+    if (any == null) return;
+    string name = typeof(T).Name;
+    any(name, payload, new GameEventArgs(name));
   }
 }

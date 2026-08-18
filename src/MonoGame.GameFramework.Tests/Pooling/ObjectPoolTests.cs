@@ -71,4 +71,49 @@ public class ObjectPoolTests
     pool.Clear();
     pool.AvailableCount.Should().Be(0);
   }
+
+#if DEBUG
+  [Fact]
+  public void Return_Twice_IsRejectedInDebugBuilds()
+  {
+    // Two Returns push the same instance twice, and the pool then hands one
+    // object to two callers who both believe they own it — which shows up as an
+    // entity teleporting, not as an exception, unless something checks.
+    ObjectPool<object> pool = new(() => new object());
+    object item = pool.Rent();
+    pool.Return(item);
+
+    pool.Invoking(p => p.Return(item))
+      .Should().Throw<System.InvalidOperationException>()
+      .WithMessage("*twice*");
+  }
+
+  [Fact]
+  public void RentReturnRentReturn_IsFine()
+  {
+    ObjectPool<object> pool = new(() => new object());
+    for (int i = 0; i < 5; i++) pool.Return(pool.Rent());
+    pool.AvailableCount.Should().Be(1);
+  }
+
+  [Fact]
+  public void ReturningAPrewarmedInstanceThatWasNeverRented_IsRejected()
+  {
+    ObjectPool<object> pool = new(() => new object(), prewarm: 1);
+    object rented = pool.Rent();
+    pool.Return(rented);
+    pool.Invoking(p => p.Return(rented)).Should().Throw<System.InvalidOperationException>();
+  }
+
+  [Fact]
+  public void Clear_ForgetsWhatItHadPooled()
+  {
+    ObjectPool<object> pool = new(() => new object());
+    object item = pool.Rent();
+    pool.Return(item);
+    pool.Clear();
+    pool.Invoking(p => p.Return(item)).Should().NotThrow();
+  }
+#endif
+
 }

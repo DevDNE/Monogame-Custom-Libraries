@@ -47,4 +47,35 @@ public class LogBoxTests
     box.FadeStart.Should().BeApproximately(0.55f, 1e-5f);
     box.FadeStep.Should().BeApproximately(0.08f, 1e-5f);
   }
+
+  [Fact]
+  public void Fade_IsKeyedToDistanceFromNewest_NotQueuePosition()
+  {
+    // The regression: fade counted up from the oldest *present* line, so every
+    // line changed brightness as the box filled toward MaxLines and the newest
+    // never reached full strength. Distance from the newest is stable.
+    LogBox box = new(maxLines: 4, fadeStart: 0.5f, fadeStep: 0.1f);
+    box.Add("a");
+    float oneLine = box.FadeFor(0);
+
+    box.Add("b");
+    box.Add("c");
+    float newestOfThree = box.FadeFor(2);
+
+    oneLine.Should().Be(1f, "the newest line is always fully opaque");
+    newestOfThree.Should().Be(1f);
+  }
+
+  [Fact]
+  public void Fade_StepsDownFromNewestAndFloorsAtFadeStart()
+  {
+    LogBox box = new(maxLines: 6, fadeStart: 0.5f, fadeStep: 0.1f);
+    for (int i = 0; i < 6; i++) box.Add($"line{i}");
+
+    box.FadeFor(5).Should().BeApproximately(1.0f, 1e-5f);  // newest
+    box.FadeFor(4).Should().BeApproximately(0.9f, 1e-5f);
+    box.FadeFor(3).Should().BeApproximately(0.8f, 1e-5f);
+    box.FadeFor(0).Should().BeApproximately(0.5f, 1e-5f);  // oldest, at the floor
+  }
+
 }

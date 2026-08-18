@@ -98,4 +98,78 @@ public class SaveSystemTests : IDisposable
       if (Directory.Exists(nestedDir)) Directory.Delete(nestedDir, recursive: true);
     }
   }
+
+  [Fact]
+  public void TryLoad_OnCorruptJson_ReturnsFalseInsteadOfThrowing()
+  {
+    // A Try- method that propagates JsonReaderException is not a Try- method: a
+    // hand-edited or half-written save took the game down at the exact moment
+    // it tried to offer a Continue button.
+    string path = Path.Combine(Path.GetTempPath(), $"mgf-save-{Path.GetRandomFileName()}.json");
+    File.WriteAllText(path, "{ not json at all");
+
+    SaveSystem sys = new();
+    sys.Invoking(x => x.TryLoad(path, out SaveFile<int> _)).Should().NotThrow();
+    sys.TryLoad(path, out SaveFile<int> file).Should().BeFalse();
+    file.Should().BeNull();
+
+    File.Delete(path);
+  }
+
+  [Fact]
+  public void TryLoad_OnATruncatedFile_ReturnsFalse()
+  {
+    string path = Path.Combine(Path.GetTempPath(), $"mgf-save-{Path.GetRandomFileName()}.json");
+    File.WriteAllText(path, "{\"Version\":1,\"Data\":{\"Node\":");
+
+    SaveSystem sys = new();
+    sys.TryLoad(path, out SaveFile<object> file).Should().BeFalse();
+    file.Should().BeNull();
+
+    File.Delete(path);
+  }
+
+  [Fact]
+  public void TryLoad_OnALiteralNullFile_ReturnsFalse()
+  {
+    string path = Path.Combine(Path.GetTempPath(), $"mgf-save-{Path.GetRandomFileName()}.json");
+    File.WriteAllText(path, "null");
+
+    SaveSystem sys = new();
+    sys.TryLoad(path, out SaveFile<int> file).Should().BeFalse();
+    file.Should().BeNull();
+
+    File.Delete(path);
+  }
+
+  [Fact]
+  public void Save_LeavesNoTempFileBehind()
+  {
+    // The write goes to a sibling temp file and is moved into place, so an
+    // interrupted write cannot truncate the previous save.
+    string path = Path.Combine(Path.GetTempPath(), $"mgf-save-{Path.GetRandomFileName()}.json");
+    SaveSystem sys = new();
+    sys.Save(path, 42);
+
+    File.Exists(path + ".tmp").Should().BeFalse();
+    sys.TryLoad(path, out SaveFile<int> file).Should().BeTrue();
+    file.Data.Should().Be(42);
+
+    File.Delete(path);
+  }
+
+  [Fact]
+  public void Save_OverAnExistingFile_ReplacesItAtomically()
+  {
+    string path = Path.Combine(Path.GetTempPath(), $"mgf-save-{Path.GetRandomFileName()}.json");
+    SaveSystem sys = new();
+    sys.Save(path, 1);
+    sys.Save(path, 2);
+
+    sys.TryLoad(path, out SaveFile<int> file).Should().BeTrue();
+    file.Data.Should().Be(2);
+
+    File.Delete(path);
+  }
+
 }

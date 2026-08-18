@@ -142,4 +142,63 @@ public class EventManagerTests
     em.TriggerEvent("hit", null, new GameEventArgs(""));
     order.Should().Equal("sub", "any");
   }
+
+  [Fact]
+  public void Unsubscribe_OfTheLastStringHandler_DropsTheKey()
+  {
+    // The string path used to null the delegate but keep the key, so a session
+    // that subscribes and unsubscribes per state grew the map forever. The
+    // typed path already removed its key; the two now agree.
+    EventManager em = new();
+    void Handler(object s, GameEventArgs e) { }
+
+    em.Subscribe("tick", Handler);
+    em.Unsubscribe("tick", Handler);
+
+    em.HasSubscribers("tick").Should().BeFalse();
+  }
+
+  [Fact]
+  public void Unsubscribe_OfOneOfSeveral_KeepsTheRest()
+  {
+    EventManager em = new();
+    int calls = 0;
+    void A(object s, GameEventArgs e) { }
+    void B(object s, GameEventArgs e) => calls++;
+
+    em.Subscribe("tick", A);
+    em.Subscribe("tick", B);
+    em.Unsubscribe("tick", A);
+
+    em.TriggerEvent("tick", null, new GameEventArgs("x"));
+    calls.Should().Be(1);
+    em.HasSubscribers("tick").Should().BeTrue();
+  }
+
+  [Fact]
+  public void Publish_WithNoAnyEventSubscriber_StillReachesTypedHandlers()
+  {
+    // Publish now skips building the diagnostic args when nothing is listening
+    // on AnyEvent; the typed dispatch must be unaffected.
+    EventManager em = new();
+    string seen = null;
+    em.Subscribe<string>(s => seen = s);
+
+    em.Publish("hello");
+
+    seen.Should().Be("hello");
+  }
+
+  [Fact]
+  public void Publish_StillFeedsAnyEventWhenSomethingIsListening()
+  {
+    EventManager em = new();
+    string seenName = null;
+    em.AnyEvent += (name, sender, args) => seenName = name;
+
+    em.Publish("hello");
+
+    seenName.Should().Be(typeof(string).Name);
+  }
+
 }

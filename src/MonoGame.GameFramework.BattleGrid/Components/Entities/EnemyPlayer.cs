@@ -123,7 +123,6 @@ public class EnemyPlayer
     GridCol = newCol;
     GridRow = newRow;
     Vector2 pos = Grid.EnemyCellTopLeft(GridCol, GridRow);
-    character.Position = pos;
     character.DestinationFrame = new Rectangle((int)pos.X, (int)pos.Y, BattleConfig.DisplayWidth, BattleConfig.DisplayHeight);
     hitbox = new Rectangle((int)pos.X, (int)pos.Y, BattleConfig.DisplayWidth, BattleConfig.DisplayHeight);
   }

@@ -68,4 +68,46 @@ public class UIManagerTests
     ui.AddUIElement("b", MakeSprite(new Rectangle(0, 0, 10, 10)));
     ui.ElementCount.Should().Be(3);
   }
+
+  [Fact]
+  public void GetElementAt_OverlappingGroups_ReturnsTheNewestGroup()
+  {
+    // Hit-testing used to walk Dictionary.Values, whose order is not defined,
+    // so two overlapping elements in different groups resolved arbitrarily.
+    UIManager ui = new(mouseManager: null);
+    SpriteSheet under = MakeSprite(new Rectangle(0, 0, 100, 100));
+    SpriteSheet over = MakeSprite(new Rectangle(0, 0, 100, 100));
+    ui.AddUIElement("board", under);
+    ui.AddUIElement("modal", over);
+
+    ui.GetElementAt(new Vector2(50, 50)).Should().BeSameAs(over);
+  }
+
+  [Fact]
+  public void GetElementAt_WithinAGroup_ReturnsTheMostRecentlyAdded()
+  {
+    UIManager ui = new(mouseManager: null);
+    SpriteSheet first = MakeSprite(new Rectangle(0, 0, 100, 100));
+    SpriteSheet second = MakeSprite(new Rectangle(0, 0, 100, 100));
+    ui.AddUIElement("menu", first);
+    ui.AddUIElement("menu", second);
+
+    ui.GetElementAt(new Vector2(50, 50)).Should().BeSameAs(second);
+  }
+
+  [Fact]
+  public void GroupOrder_IsCreationOrderAndIsStableAcrossEmptying()
+  {
+    UIManager ui = new(mouseManager: null);
+    SpriteSheet a = MakeSprite(new Rectangle(0, 0, 10, 10));
+    ui.AddUIElement("first", a);
+    ui.AddUIElement("second", MakeSprite(new Rectangle(0, 0, 10, 10)));
+    ui.GroupOrder.Should().Equal("first", "second");
+
+    // Emptying a group must not restack it behind the other one.
+    ui.RemoveUIElement("first", a);
+    ui.AddUIElement("first", MakeSprite(new Rectangle(0, 0, 10, 10)));
+    ui.GroupOrder.Should().Equal("first", "second");
+  }
+
 }

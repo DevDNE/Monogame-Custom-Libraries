@@ -38,13 +38,26 @@ public sealed class LogBox
 
   public void Clear() => _lines.Clear();
 
+  /// <summary>
+  /// Opacity multiplier for the line at <paramref name="index"/>, counting from
+  /// the oldest. The newest line is always 1.0 and older lines step down by
+  /// <see cref="FadeStep"/> to a <see cref="FadeStart"/> floor — keyed to
+  /// distance from the newest, so the gradient does not shift as the box fills.
+  /// Exposed because it is the whole visual contract and Draw needs a SpriteFont.
+  /// </summary>
+  public float FadeFor(int index)
+  {
+    float fade = 1f - FadeStep * (_lines.Count - 1 - index);
+    if (fade < FadeStart) fade = FadeStart;
+    return fade > 1f ? 1f : fade;
+  }
+
   public void Draw(SpriteBatch spriteBatch, SpriteFont font, Vector2 origin, float lineHeight = 22f)
   {
     int i = 0;
     foreach (string msg in _lines)
     {
-      float fade = FadeStart + FadeStep * i;
-      if (fade > 1f) fade = 1f;
+      float fade = FadeFor(i);
       Color c = new((byte)(BaseColor.R * fade), (byte)(BaseColor.G * fade), (byte)(BaseColor.B * fade));
       spriteBatch.DrawString(font, msg, new Vector2(origin.X, origin.Y + i * lineHeight), c);
       i++;

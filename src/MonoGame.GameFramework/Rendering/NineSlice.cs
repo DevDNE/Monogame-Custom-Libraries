@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -57,16 +58,35 @@ public sealed class NineSlice
 
   public void Draw(SpriteBatch spriteBatch, Rectangle destination, int scale, Color? tint = null)
   {
-    if (scale < 1) throw new ArgumentOutOfRangeException(nameof(scale), scale, "Pixel art scales by whole numbers only.");
-    if (destination.Width <= 0 || destination.Height <= 0) return;
-
     Color color = tint ?? Color.White;
-    int b = Border;
+    foreach ((Rectangle src, Rectangle dst) in SliceRects(Source, Border, destination, scale))
+      Blit(spriteBatch, src, dst, color);
+  }
+
+  /// <summary>
+  /// The source/destination pairs <see cref="Draw"/> would blit — corners, then
+  /// the four edges, then the middle, with edges and middle already expanded
+  /// into their repeated tiles.
+  ///
+  /// Split out for the same reason <see cref="PixelDraw.TileRects"/> is: this is
+  /// nine rectangles of arithmetic where an off-by-one is a one-pixel seam or a
+  /// corner drawn twice, none of it eyeballable and none of it assertable
+  /// through a SpriteBatch. Static and texture-free, so it can be tested without
+  /// a GraphicsDevice.
+  /// </summary>
+  public static IEnumerable<(Rectangle Source, Rectangle Destination)> SliceRects(
+    Rectangle source, int border, Rectangle destination, int scale)
+  {
+    if (scale < 1) throw new ArgumentOutOfRangeException(nameof(scale), scale, "Pixel art scales by whole numbers only.");
+    if (border < 0) throw new ArgumentOutOfRangeException(nameof(border), border, "Border cannot be negative.");
+    if (destination.Width <= 0 || destination.Height <= 0) yield break;
+
+    int b = border;
     int bs = b * scale;
 
     // Middle spans in source pixels — what is left after the two corners.
-    int midSrcW = Source.Width - b * 2;
-    int midSrcH = Source.Height - b * 2;
+    int midSrcW = source.Width - b * 2;
+    int midSrcH = source.Height - b * 2;
 
     // Destination spans. A rect narrower than both corners would draw them
     // overlapping; clamping at zero drops the middle and lets the corners meet,
@@ -79,32 +99,37 @@ public sealed class NineSlice
 
     if (b > 0)
     {
-      Blit(spriteBatch, new Rectangle(Source.X, Source.Y, b, b), new Rectangle(left, top, bs, bs), color);
-      Blit(spriteBatch, new Rectangle(Source.Right - b, Source.Y, b, b), new Rectangle(right, top, bs, bs), color);
-      Blit(spriteBatch, new Rectangle(Source.X, Source.Bottom - b, b, b), new Rectangle(left, bottom, bs, bs), color);
-      Blit(spriteBatch, new Rectangle(Source.Right - b, Source.Bottom - b, b, b), new Rectangle(right, bottom, bs, bs), color);
+      yield return (new Rectangle(source.X, source.Y, b, b), new Rectangle(left, top, bs, bs));
+      yield return (new Rectangle(source.Right - b, source.Y, b, b), new Rectangle(right, top, bs, bs));
+      yield return (new Rectangle(source.X, source.Bottom - b, b, b), new Rectangle(left, bottom, bs, bs));
+      yield return (new Rectangle(source.Right - b, source.Bottom - b, b, b), new Rectangle(right, bottom, bs, bs));
     }
 
-    if (midDstW > 0 && b > 0)
+    if (midDstW > 0 && b > 0 && midSrcW > 0)
     {
-      Rectangle topEdge = new(Source.X + b, Source.Y, midSrcW, b);
-      Rectangle bottomEdge = new(Source.X + b, Source.Bottom - b, midSrcW, b);
-      PixelDraw.Tile(spriteBatch, Texture, topEdge, new Rectangle(left + bs, top, midDstW, bs), scale, color);
-      PixelDraw.Tile(spriteBatch, Texture, bottomEdge, new Rectangle(left + bs, bottom, midDstW, bs), scale, color);
+      Rectangle topEdge = new(source.X + b, source.Y, midSrcW, b);
+      Rectangle bottomEdge = new(source.X + b, source.Bottom - b, midSrcW, b);
+      foreach (var pair in PixelDraw.TileRects(topEdge, new Rectangle(left + bs, top, midDstW, bs), scale))
+        yield return pair;
+      foreach (var pair in PixelDraw.TileRects(bottomEdge, new Rectangle(left + bs, bottom, midDstW, bs), scale))
+        yield return pair;
     }
 
-    if (midDstH > 0 && b > 0)
+    if (midDstH > 0 && b > 0 && midSrcH > 0)
     {
-      Rectangle leftEdge = new(Source.X, Source.Y + b, b, midSrcH);
-      Rectangle rightEdge = new(Source.Right - b, Source.Y + b, b, midSrcH);
-      PixelDraw.Tile(spriteBatch, Texture, leftEdge, new Rectangle(left, top + bs, bs, midDstH), scale, color);
-      PixelDraw.Tile(spriteBatch, Texture, rightEdge, new Rectangle(right, top + bs, bs, midDstH), scale, color);
+      Rectangle leftEdge = new(source.X, source.Y + b, b, midSrcH);
+      Rectangle rightEdge = new(source.Right - b, source.Y + b, b, midSrcH);
+      foreach (var pair in PixelDraw.TileRects(leftEdge, new Rectangle(left, top + bs, bs, midDstH), scale))
+        yield return pair;
+      foreach (var pair in PixelDraw.TileRects(rightEdge, new Rectangle(right, top + bs, bs, midDstH), scale))
+        yield return pair;
     }
 
-    if (midDstW > 0 && midDstH > 0)
+    if (midDstW > 0 && midDstH > 0 && midSrcW > 0 && midSrcH > 0)
     {
-      Rectangle middle = new(Source.X + b, Source.Y + b, midSrcW, midSrcH);
-      PixelDraw.Tile(spriteBatch, Texture, middle, new Rectangle(left + bs, top + bs, midDstW, midDstH), scale, color);
+      Rectangle middle = new(source.X + b, source.Y + b, midSrcW, midSrcH);
+      foreach (var pair in PixelDraw.TileRects(middle, new Rectangle(left + bs, top + bs, midDstW, midDstH), scale))
+        yield return pair;
     }
   }
 

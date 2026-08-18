@@ -8,6 +8,10 @@ public class Projectile
 {
   private SpriteSheet sprite;
   private Rectangle hurtbox;
+  // Float position, kept by the projectile rather than by its sprite. The
+  // sprite's destination rect is integer pixels, so it cannot accumulate a
+  // fractional velocity without truncating it away every frame.
+  private Vector2 position;
   private Vector2 velocity;
   private readonly DrawManager drawManager;
   private readonly int _damage;
@@ -23,6 +27,7 @@ public class Projectile
     Vector2 position, Vector2 velocity, int damage = BattleConfig.ProjectileDamage)
   {
     this.drawManager = drawManager;
+    this.position = position;
     this.velocity = velocity;
     _damage = damage;
     sprite = SpriteSheet.Static(
@@ -44,9 +49,9 @@ public class Projectile
 
   public void Update(GameTime gameTime)
   {
-    sprite.Position += velocity;
+    position += velocity;
     sprite.DestinationFrame = new Rectangle(
-      (int)sprite.Position.X, (int)sprite.Position.Y,
+      (int)position.X, (int)position.Y,
       BattleConfig.ProjectileDisplaySize, BattleConfig.ProjectileDisplaySize);
     hurtbox = sprite.DestinationFrame;
   }

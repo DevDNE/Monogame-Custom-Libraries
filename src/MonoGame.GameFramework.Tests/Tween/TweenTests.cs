@@ -67,4 +67,30 @@ public class TweenTests
     t.Update(0.001f).Should().Be(5f);
     t.IsComplete.Should().BeTrue();
   }
+
+  [Fact]
+  public void Reset_AlsoRewindsCurrent()
+  {
+    // Reset used to rewind Elapsed but leave Current holding the value it had
+    // reached, so a tween that was reset and drawn before its next Update
+    // showed its end state for one frame.
+    var t = Tween.Float(0f, 10f, 1f);
+    t.Update(1f);
+    t.Current.Should().Be(10f);
+
+    t.Reset();
+
+    t.Current.Should().Be(0f);
+    t.Elapsed.Should().Be(0f);
+    t.IsComplete.Should().BeFalse();
+  }
+
+  [Fact]
+  public void Reset_OnAZeroDurationTween_StaysAtTheEndValue()
+  {
+    var t = Tween.Float(0f, 5f, 0f);
+    t.Reset();
+    t.Current.Should().Be(5f);
+  }
+
 }

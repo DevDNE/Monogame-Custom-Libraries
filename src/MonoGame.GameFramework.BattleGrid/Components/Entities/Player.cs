@@ -84,7 +84,6 @@ public class Player
   private void RefreshFromGrid()
   {
     Vector2 pos = BattleGrid.Grid.PlayerCellTopLeft(GridCol, GridRow);
-    character.Position = pos;
     character.DestinationFrame = new Rectangle((int)pos.X, (int)pos.Y, BattleConfig.DisplayWidth, BattleConfig.DisplayHeight);
     hitbox = new Rectangle((int)pos.X, (int)pos.Y, BattleConfig.DisplayWidth, BattleConfig.DisplayHeight);
   }

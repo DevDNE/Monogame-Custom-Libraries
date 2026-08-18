@@ -15,10 +15,20 @@ namespace MonoGame.GameFramework.Tools;
 ///      textures. The default sampler is LinearClamp, which blurs pixel art at
 ///      any scale other than 1:1.
 ///
-/// Deliberately self-limiting: a project with no TextureImporter blocks in its
-/// .mgcb is skipped entirely. That keeps the seven rectangle-only samples
-/// silent — there is nothing to get wrong until a game actually has sprites —
-/// while making it impossible for a new game to ship the mistake.
+/// Deliberately self-limiting, on a rule that reads off project structure:
+///
+///   * .mgcb with TextureImporter blocks  — a game that ships sprites. Full
+///     check: content settings and source.
+///   * .mgcb with no TextureImporter blocks — a game that has opted out of
+///     sprites. Skipped entirely, so a rectangle-only sample stays silent.
+///   * no .mgcb at all — shared library code. It has no content of its own, so
+///     no content rule can apply, but its Draw calls run inside every game that
+///     *does* ship sprites. Source is scanned; content checks are skipped.
+///
+/// That last case was previously a bail-out on the very first line, which meant
+/// MonoGame.GameFramework — the one project whose code runs in all nine games —
+/// was the only place a bare Begin() could never be reported. DebugOverlay had
+/// one.
 /// </summary>
 public static class SpriteConventionChecker
 {
@@ -26,9 +36,13 @@ public static class SpriteConventionChecker
 
   public sealed record CheckResult(
     IReadOnlyList<string> TextureAssets,
-    IReadOnlyList<Violation> Violations)
+    IReadOnlyList<Violation> Violations,
+    bool SourceScanned = false)
   {
     public bool HasTextures => TextureAssets.Count > 0;
+
+    /// <summary>Shared code: no content of its own, but its source was checked.</summary>
+    public bool IsSharedCode => !HasTextures && SourceScanned;
   }
 
   // A bare Begin() — no sampler, no anything. Begin(...) with arguments is
@@ -42,9 +56,11 @@ public static class SpriteConventionChecker
     string mgcb = Path.Combine(projectDir, "Content", "Content.mgcb");
     List<string> textures = new();
     List<Violation> violations = new();
-    if (!File.Exists(mgcb)) return new CheckResult(textures, violations);
+    bool hasContentPipeline = File.Exists(mgcb);
 
-    foreach (ContentBlock block in ParseBlocks(File.ReadAllLines(mgcb)))
+    foreach (ContentBlock block in hasContentPipeline
+      ? ParseBlocks(File.ReadAllLines(mgcb))
+      : Enumerable.Empty<ContentBlock>())
     {
       if (!block.IsTexture) continue;
       textures.Add(block.Asset);
@@ -62,7 +78,11 @@ public static class SpriteConventionChecker
       }
     }
 
-    if (textures.Count == 0) return new CheckResult(textures, violations);
+    // Scan source when this project ships textures, or when it is shared code
+    // with no content pipeline of its own. A project that has an .mgcb and
+    // chose not to put textures in it is the one case that stays silent.
+    bool scanSource = textures.Count > 0 || !hasContentPipeline;
+    if (!scanSource) return new CheckResult(textures, violations);
 
     foreach (string cs in Directory.EnumerateFiles(projectDir, "*.cs", SearchOption.AllDirectories))
     {
@@ -72,13 +92,16 @@ public static class SpriteConventionChecker
       for (int i = 0; i < lines.Length; i++)
       {
         if (!BareBeginCall.IsMatch(lines[i])) continue;
+        string why = textures.Count > 0
+          ? "in a project that ships textures"
+          : "in shared code drawn by projects that ship textures";
         violations.Add(new Violation(cs,
-          $"{rel}:{i + 1}: SpriteBatch.Begin() with no samplerState in a project that ships textures. " +
+          $"{rel}:{i + 1}: SpriteBatch.Begin() with no samplerState {why}. " +
           "Pass SamplerState.PointClamp — the default LinearClamp blurs pixel art."));
       }
     }
 
-    return new CheckResult(textures, violations);
+    return new CheckResult(textures, violations, SourceScanned: true);
   }
 
   sealed class ContentBlock

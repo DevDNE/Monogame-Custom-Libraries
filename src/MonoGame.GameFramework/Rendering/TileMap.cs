@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 
@@ -42,23 +43,41 @@ public class TileMap
     return new Rectangle((int)pos.X, (int)pos.Y, TileWidth, TileHeight);
   }
 
+  /// <summary>
+  /// Unbounded point-to-cell. Floors rather than truncating, so a point left
+  /// of or above the origin lands in a negative cell instead of folding onto
+  /// cell 0 — an int cast rounds toward zero, which made (-1, -1) world units
+  /// report as cell (0, 0), silently inside the map.
+  /// Prefer <see cref="TryWorldToCell"/> when the point can miss the map.
+  /// </summary>
   public (int column, int row) WorldToCell(Vector2 world)
   {
     Vector2 local = world - Origin;
-    return ((int)(local.X / TileWidth), (int)(local.Y / TileHeight));
+    return (FloorDiv(local.X, TileWidth), FloorDiv(local.Y, TileHeight));
   }
 
+  /// <summary>
+  /// Bounds-checked point-to-cell. Both out-params are -1 on any failure.
+  /// </summary>
   public bool TryWorldToCell(Vector2 world, out int column, out int row)
   {
+    column = -1;
+    row = -1;
+
+    if (TileWidth <= 0 || TileHeight <= 0) return false;
+
     Vector2 local = world - Origin;
-    if (local.X < 0 || local.Y < 0)
-    {
-      column = -1;
-      row = -1;
-      return false;
-    }
-    column = (int)(local.X / TileWidth);
-    row = (int)(local.Y / TileHeight);
-    return column < Columns && row < Rows;
+    if (local.X < 0 || local.Y < 0) return false;
+
+    int c = (int)(local.X / TileWidth);
+    int r = (int)(local.Y / TileHeight);
+    if (c >= Columns || r >= Rows) return false;
+
+    column = c;
+    row = r;
+    return true;
   }
+
+  static int FloorDiv(float value, int size)
+    => size <= 0 ? 0 : (int)MathF.Floor(value / size);
 }
