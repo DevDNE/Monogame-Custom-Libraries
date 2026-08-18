@@ -205,4 +205,91 @@ public class PixTests
 
     PixRenderer.Diff(Path.Combine(dir, "chevron.pix"), png).Should().BeNull();
   }
+
+  // ------------------------------------------------------------------
+  // The `frames` directive. It exists so the animation gate is
+  // self-limiting on a property of the file rather than on a list: a PNG
+  // cannot say whether it is four poses or one wide tile, so the source does.
+  // ------------------------------------------------------------------
+
+  [Fact]
+  public void Frames_IsNullOnAStill()
+  {
+    PixDocument doc = PixDocument.Parse("""
+      size 4 2
+      key o outline
+      pixels
+      oooo
+      oooo
+      """.Split('\n'));
+
+    doc.Frames.Should().BeNull();
+    doc.FrameWidth.Should().BeNull("a still has no frame width to report");
+  }
+
+  [Fact]
+  public void Frames_DeclaredOnAStrip_GivesTheFrameWidth()
+  {
+    PixDocument doc = PixDocument.Parse("""
+      size 8 2
+      frames 4
+      key o outline
+      pixels
+      oooooooo
+      oooooooo
+      """.Split('\n'));
+
+    doc.Frames.Should().Be(4);
+    doc.FrameWidth.Should().Be(2);
+  }
+
+  [Fact]
+  public void Frames_ThatDoNotDivideTheWidth_AreRejected()
+  {
+    // Slicing anyway offsets every frame after the first, and the result still
+    // renders, so the parser is the last place this can be caught cheaply.
+    System.Action parse = () => PixDocument.Parse("""
+      size 7 2
+      frames 4
+      key o outline
+      pixels
+      ooooooo
+      ooooooo
+      """.Split('\n'));
+
+    parse.Should().Throw<PixDocument.ParseException>()
+      .WithMessage("*does not divide*")
+      .WithMessage("*1.75*");
+  }
+
+  [Fact]
+  public void Frames_BelowOne_IsRejected()
+  {
+    System.Action parse = () => PixDocument.Parse("""
+      size 4 2
+      frames 0
+      key o outline
+      pixels
+      oooo
+      oooo
+      """.Split('\n'));
+
+    parse.Should().Throw<PixDocument.ParseException>().WithMessage("*at least 1*");
+  }
+
+  [Fact]
+  public void Frames_IsListedAmongTheKnownDirectives()
+  {
+    // The error text is the only documentation a typo gets.
+    System.Action parse = () => PixDocument.Parse("""
+      size 4 2
+      frmaes 2
+      key o outline
+      pixels
+      oooo
+      oooo
+      """.Split('\n'));
+
+    parse.Should().Throw<PixDocument.ParseException>().WithMessage("*frames*");
+  }
 }

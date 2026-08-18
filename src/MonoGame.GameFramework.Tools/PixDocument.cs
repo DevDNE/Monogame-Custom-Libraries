@@ -38,6 +38,20 @@ public sealed class PixDocument
 
   public string Name { get; init; }
   public string PaletteOverride { get; init; }
+
+  /// <summary>
+  /// Frame count for a sprite that is an animation strip, from the optional
+  /// `frames N` directive. Null for a still.
+  ///
+  /// It exists so the animation gate can be self-limiting on a property of the
+  /// thing checked rather than on a list someone maintains (FINDINGS 10.2): a
+  /// PNG cannot say whether it is four poses or one wide tile, so the source
+  /// says it, and check-anim-all checks exactly the files that declare it.
+  /// </summary>
+  public int? Frames { get; init; }
+
+  /// <summary>Width of one frame. Null unless <see cref="Frames"/> is set.</summary>
+  public int? FrameWidth => Frames is int n && n > 0 ? Width / n : null;
   public IReadOnlyDictionary<char, string> Key { get; init; }
   public IReadOnlyList<string> Rows { get; init; }
 
@@ -69,7 +83,7 @@ public sealed class PixDocument
   public static PixDocument Parse(IEnumerable<string> lines)
   {
     string name = null, paletteOverride = null;
-    int? declaredWidth = null, declaredHeight = null;
+    int? declaredWidth = null, declaredHeight = null, frames = null;
     Dictionary<char, string> key = new();
     List<string> rows = new();
     bool inGrid = false;
@@ -100,6 +114,11 @@ public sealed class PixDocument
             paletteOverride = parts[1];
             continue;
 
+          case "frames" when parts.Length >= 2 && int.TryParse(parts[1], out int f):
+            if (f < 1) throw new ParseException($"line {lineNumber}: frames must be at least 1.");
+            frames = f;
+            continue;
+
           case "size" when parts.Length >= 3
                            && int.TryParse(parts[1], out int w)
                            && int.TryParse(parts[2], out int h):
@@ -122,7 +141,7 @@ public sealed class PixDocument
 
           default:
             throw new ParseException($"line {lineNumber}: unrecognised directive '{trimmed}'. " +
-                                     "Expected name/palette/size/key, then 'pixels'.");
+                                     "Expected name/palette/size/frames/key, then 'pixels'.");
         }
       }
 
@@ -180,6 +199,13 @@ public sealed class PixDocument
 
     if (declaredWidth is int dw && dw != width)
       throw new ParseException($"declared size is {dw} wide, grid is {width}.");
+
+    // A strip whose width does not divide by its frame count cannot be sliced,
+    // and slicing it anyway would silently shift every frame after the first.
+    if (frames is int fc && width % fc != 0)
+      throw new ParseException(
+        $"declared {fc} frames but the grid is {width} wide, which does not divide by {fc}. " +
+        $"Each frame would be {(double)width / fc:0.##} px.");
     if (declaredHeight is int dh && dh != rows.Count)
       throw new ParseException($"declared size is {dh} tall, grid is {rows.Count}.");
 
@@ -192,6 +218,7 @@ public sealed class PixDocument
     {
       Name = name,
       PaletteOverride = paletteOverride,
+      Frames = frames,
       Key = key,
       Rows = rows,
     };

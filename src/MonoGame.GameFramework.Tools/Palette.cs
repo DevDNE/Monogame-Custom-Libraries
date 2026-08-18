@@ -178,7 +178,7 @@ public sealed class Palette
     return null;
   }
 
-  readonly record struct Oklab(double L, double A, double B)
+  internal readonly record struct Oklab(double L, double A, double B)
   {
     public double DistanceTo(Oklab o)
       => Math.Sqrt((L - o.L) * (L - o.L) + (A - o.A) * (A - o.A) + (B - o.B) * (B - o.B));
@@ -203,7 +203,7 @@ public sealed class Palette
       => c <= 0.04045 ? c / 12.92 : Math.Pow((c + 0.055) / 1.055, 2.4);
   }
 
-  readonly record struct Hsv(double H, double S, double V)
+  internal readonly record struct Hsv(double H, double S, double V)
   {
     public static Hsv FromRgb(Rgb c)
     {
