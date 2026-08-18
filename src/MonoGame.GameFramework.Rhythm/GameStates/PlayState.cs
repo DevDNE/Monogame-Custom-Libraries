@@ -129,8 +129,16 @@ public class PlayState : GameState
       {
         _consumed[bestIdx] = true;
         _flashRemaining[lane] = 0.18f;
-        _sound.PlaySoundEffect("audio/click");
-        if (bestAbsDelta <= PerfectWindow) { _score += 100; _perfects++; }
+
+        // One click sample, fifty-odd times a session, at one pitch and dead
+        // centre: it fuses into a flat tick that tells the player nothing. Pan
+        // by lane so the sound comes from where the note was, and lift the
+        // pitch on a perfect so the timing is audible as well as visible.
+        bool perfect = bestAbsDelta <= PerfectWindow;
+        float pan = (lane - (Chart.LaneCount - 1) / 2f) / ((Chart.LaneCount - 1) / 2f);
+        _sound.PlaySoundEffect("audio/click", volume: perfect ? 1f : 0.8f, pitch: perfect ? 0.15f : 0f, pan: pan);
+
+        if (perfect) { _score += 100; _perfects++; }
         else { _score += 50; _hits++; }
         _combo++;
         if (_combo > _maxCombo) _maxCombo = _combo;
