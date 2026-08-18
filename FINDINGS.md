@@ -1,6 +1,6 @@
 # Findings — Library Review from Building Sample Games
 
-Original snapshot: 2026-04-18. Updated 2026-04-18 (a) — four non-deferred §6 items landed in commit `702dd54`; their findings below are annotated as **Fixed**. Updated 2026-04-18 (b) — BattleGrid expanded from a tactical-grid stub into a real game with chip selection, enemy AI patterns, and a full HUD. Updated 2026-04-18 (c) — **Shooter** sample added (twin-stick arena survival); first real load test for `ObjectPool`, `TimerManager`, and `Camera2D.ScreenToWorld`. Updated 2026-04-18 (d) — **Puzzle** sample added (match-3 cascade); first real consumer of `TileMap` + `TileLayer<T>`. Surfaced a SpriteFont charset footgun (§1.10). Updated 2026-04-18 (e) — **Roguelike** sample added (turn-based dungeon crawler with procedural generation); second `TileMap` consumer + hand-rolled turn scheduling. Updated 2026-04-18 (f) — **TowerDefense** sample added; second `ObjectPool` consumer and first mouse-driven grid-cell placement interaction. Updated 2026-04-18 (g) — **Rhythm** sample added; first real `Audio.SoundManager` consumer and first content-pipelined audio asset. Updated 2026-04-18 (h) — **VisualNovel** sample added; first real `Persistence.SaveSystem` consumer, first real `Tween<T>` consumer, and surfaced a namespace/class collision bug (§1.14). Updated 2026-04-18 (i) — **AutoBattler** sample added; first real `EventManager` typed-API consumer, most complex state machine (Title/Shop/Combat/PostCombat), hand-rolled BFS pathfinding. **§8 fully revised with 9-game data.** Updated 2026-04-18 (j) — **§8 Suggested Execution Order completed end-to-end**: Tween namespace renamed to `Tweening`; `TileLayer.Swap` + `TileMap.TryWorldToCell` + `GridMath.TryMouseToCell` added; `SoundManager.PlaySoundEffect` now logs on unloaded names. Tier B deletions landed: `Core.Entity` (+migrated 4 BattleGrid subclasses), `SpriteSheet.Animated`, `Utilities.MathUtilities`, `Debugging.PerformanceMonitor`; `Timing.Timer` constructor made internal. Tier D extractions landed: `Lifecycle.TitleScreenState` (all 9 games migrated, ~720 lines collapsed), `UI.HpBar` (4 consumers migrated), `UI.LogBox` (Roguelike + AutoBattler migrated; BattleGrid stays on `TextManager`), `Pooling.PooledEntitySet<T>` (Shooter + TowerDefense migrated). Tests: 100 → 122 passing. All items in §8 Tier A / Tier B / Tier D #1-5 are now ✅ Done.
+Original snapshot: 2026-04-18. Updated 2026-04-18 (a) — four non-deferred §6 items landed in commit `702dd54`; their findings below are annotated as **Fixed**. Updated 2026-04-18 (b) — BattleGrid expanded from a tactical-grid stub into a real game with chip selection, enemy AI patterns, and a full HUD. Updated 2026-04-18 (c) — **Shooter** sample added (twin-stick arena survival); first real load test for `ObjectPool`, `TimerManager`, and `Camera2D.ScreenToWorld`. Updated 2026-04-18 (d) — **Puzzle** sample added (match-3 cascade); first real consumer of `TileMap` + `TileLayer<T>`. Surfaced a SpriteFont charset footgun (§1.10). Updated 2026-04-18 (e) — **Roguelike** sample added (turn-based dungeon crawler with procedural generation); second `TileMap` consumer + hand-rolled turn scheduling. Updated 2026-04-18 (f) — **TowerDefense** sample added; second `ObjectPool` consumer and first mouse-driven grid-cell placement interaction. Updated 2026-04-18 (g) — **Rhythm** sample added; first real `Audio.SoundManager` consumer and first content-pipelined audio asset. Updated 2026-04-18 (h) — **VisualNovel** sample added; first real `Persistence.SaveSystem` consumer, first real `Tween<T>` consumer, and surfaced a namespace/class collision bug (§1.14). Updated 2026-04-18 (i) — **AutoBattler** sample added; first real `EventManager` typed-API consumer, most complex state machine (Title/Shop/Combat/PostCombat), hand-rolled BFS pathfinding. **§8 fully revised with 9-game data.** Updated 2026-04-18 (j) — **§8 Suggested Execution Order completed end-to-end**: Tween namespace renamed to `Tweening`; `TileLayer.Swap` + `TileMap.TryWorldToCell` + `GridMath.TryMouseToCell` added; `SoundManager.PlaySoundEffect` now logs on unloaded names. Tier B deletions landed: `Core.Entity` (+migrated 4 BattleGrid subclasses), `SpriteSheet.Animated`, `Utilities.MathUtilities`, `Debugging.PerformanceMonitor`; `Timing.Timer` constructor made internal. Tier D extractions landed: `Lifecycle.TitleScreenState` (all 9 games migrated, ~720 lines collapsed), `UI.HpBar` (4 consumers migrated), `UI.LogBox` (Roguelike + AutoBattler migrated; BattleGrid stays on `TextManager`), `Pooling.PooledEntitySet<T>` (Shooter + TowerDefense migrated). Tests: 100 → 122 passing. All items in §8 Tier A / Tier B / Tier D #1-5 are now ✅ Done. Updated 2026-08-17 — **the art pass**: all nine samples now ship pixel art from a per-game palette, closing the §1.17 blind spot across the whole sample set rather than in one game. Two library types added (`Rendering.PixelDraw`, `Rendering.NineSlice`), five new gates in CI, and `TitleScreenState` gained an opt-in skin. **New §9 records what nine sprite-using consumers demanded** — including the one thing they still do not.
 
 ## Context
 
@@ -214,12 +214,14 @@ Platformer now renders a real 32×32 sprite (2026-08-11). What that produced:
 
 1. **Collision bounds and sprite bounds can differ — minor, and game-specific.** Platformer's box is 32×48 while the art is 32×32, so the frame is drawn feet-anchored at native size rather than stretched (non-uniform scaling would give some pixels one screen-pixel and others two). Worth noting only because the rectangle-games never had to separate the two concepts. But the mismatch here is an artifact of the source art being a scratch Aseprite test on a 32×32 canvas, not a finding about entity design — a game whose art is drawn to its hitbox has no such problem. Not a convention; left as-is.
 2. **`TextureFormat` must be `Color` for sprites, not the `Compressed` used for fonts.** DXT is block compression; it mangles the hard 1px colour boundaries pixel art is made of. The tell is artifact size — a 32×32 `Color` texture lands at 4181 bytes (32·32·4 + header). Anything much smaller means compression silently happened.
-3. **`SamplerState.PointClamp` is missing almost everywhere.** Only 2 of 9 games pass it, and both only incidentally, because they happen to use a camera transform. The other 7 call bare `Begin()` and would blur pixel art on contact. This is a default that should be right in the template rather than rediscovered per game.
+3. **`SamplerState.PointClamp` is missing almost everywhere.** Only 2 of 9 games pass it, and both only incidentally, because they happen to use a camera transform. The other 7 call bare `Begin()` and would blur pixel art on contact. This is a default that should be right in the template rather than rediscovered per game. *(All 9 pass it as of 2026-08-17; `check-sprites-all` is what keeps it that way.)*
 4. **The demand is state→frame mapping, not time-based cycling.** The hero's art has one frame per walk direction; only the blink is time-driven. So this consumer still does *not* justify restoring `SpriteSheet.Animated` — it justifies a `state → frame` selector, which is currently four lines in `Player.CurrentFrame` and not worth extracting from one consumer.
 
 **Open question for consumer #2**: only a genuine multi-frame cycle can decide the animator question, and this art — a scratch Aseprite test, one frame per direction — cannot answer it either way. The trap to avoid is concluding "no animator needed" from art that could never have demanded one. Whenever a second sprite-using game appears, give it art with a real cycle if you want that question settled; otherwise leave the question open rather than treating silence as evidence.
 
 **Status of Tier B #2 (`SpriteSheet.Animated`)**: still correctly deleted. One consumer, and it wants frame *selection*, not frame *cycling*. Revisit at the second consumer, not before.
+
+> **Updated 2026-08-17 — the blind spot is closed, the open question is not.** All nine samples now ship art, so findings (2), (3) and (4) above have eight more data points each. (2) and (3) held and are enforced. (4) held too, and that is the uncomfortable part: nine consumers still want frame *selection*, and the animator question above is **still open on its own terms** — see §9.2. The eight new consumers did not answer it, because none of them was given art with a real cycle either. Silence from nine is no better evidence than silence from one when all nine were drawn by the same hand under the same constraint.
 
 > **Regression guard added 2026-08-11**: findings (2) and (3) above are now enforced rather than documented. `mgf-tools check-sprites-all` fails on a sprite built with `TextureFormat=Compressed`, on `ResizeToPowerOfTwo`/`MakeSquare` padding, and on a bare `SpriteBatch.Begin()` in a project that ships textures. It's self-limiting — a project with no `TextureImporter` blocks is skipped — so the seven rectangle-only samples stay silent and no speculative churn was needed to "fix" them; the guard simply fires the moment one gains a sprite. It caught a real bare `Begin()` in Platformer's own win-overlay on its first run. Finding (1) is deliberately not enforced — it's a per-game detail, not a rule worth a checker.
 >
@@ -583,3 +585,88 @@ Concrete next commit plan if you build from here:
 4. **Optional second extraction commit**: `HpBar` helper; migrate BattleGrid / Shooter / Roguelike. (Tier D item 2, ~1 hour.)
 
 Everything else waits for a concrete real-project need to surface. The library will be materially smaller, better-understood, and more focused after those three commits than it is today — and the data to justify every change is on file in §§1–7.
+
+---
+
+## §9 — The art pass: nine games, nine palettes (NEW 2026-08-17)
+
+§1.17 recorded the blind spot: nine consumers, every one of them drawing coloured rectangles, and conclusions about sprite-related library surface drawn from a sample that had been simplified in exactly that direction. Platformer's single hero was the first correction. This section records what happened when the remaining eight got real art too — 62 PNGs across 11 targets, 53 of them rendered from `.pix` text sources, under 11 palettes.
+
+The headline: **the blind spot closed, and the one conclusion it most threatened survived anyway** — but not for the reason nine data points would suggest. See §9.2.
+
+### 9.1 Two library types were extracted, and both are shaped by what a linter cannot see
+
+`check-sprites` (added at §1.17) catches a bare `Begin()` and a compressed texture. It cannot see that a destination rectangle was computed from a float division, which is the other half of how pixel art gets ruined. So the two new types are both attempts to make the mistake *unrepresentable* rather than *detectable*:
+
+- **`Rendering.PixelDraw`** takes an integer scale instead of a destination rectangle. There is no argument you can pass it that scales 1.5x or squashes the aspect. 28 files call it.
+- **`Rendering.NineSlice`** makes a resizable frame affordable: one 16x16 sprite per game, 4px border, and every button, panel and card in that game comes out of it at whatever size the layout wants. Nine games skinned their entire menu from one sprite each.
+
+This is the same move as §1.10 → `lint-spritefont` and §1.17 → `check-sprites`, one rung further along: a checker turns a silent failure into a red build, and an API of the right shape turns it into a compile error or an argument you cannot write. Prefer the second when the failure lives at a call site you own.
+
+**Where it did not reach**: 5 draw sites still call `SpriteBatch.Draw` with a destination rectangle — Platformer's hero, and Roguelike's tile/actor loops. Both are correct today because both draw 1:1, where a destination rect and `PixelDraw` are identical. Neither is *held* at 1:1 by anything. Roguelike's is deliberate (`Scale = 1`, "a dungeon this wide has no room to magnify"); Platformer's is the §1.17 feet-anchoring case. Worth knowing they exist before someone changes a scale constant and wonders why one game went soft.
+
+### 9.2 Nine sprite consumers, and the animator question is *still* open
+
+§1.17 left this open for "consumer #2" and warned against reading silence as evidence. There are now nine, and the honest answer is that the question is **exactly as open as it was**, because the trap §1.17 named is the one the art pass walked into.
+
+What the nine actually do with time:
+
+| Game | Time-driven motion | Kind |
+|---|---|---|
+| Platformer | hero blinks: `_elapsed % 3f > 2.8f` picks one of two idle frames | 2-frame flip |
+| Roguelike | torch: `(int)(_elapsed * 8f) % 2` offsets the draw by a pixel | 2-state position |
+| BattleGrid | `(int)(_elapsed * 2f) % 2` bobs the sprite one scale-unit | 2-state position |
+| Shooter, TowerDefense, Rhythm, Puzzle | `_elapsed * k` scrolls or steps a position | whole-pixel stepping |
+| VisualNovel, AutoBattler | none on the title screen | — |
+
+Not one is a time-driven cycle through ≥3 frames of a sheet. Everything else is state→frame *selection* (`Player.CurrentFrame`, `Board.Gem`, `TileKind`, `UnitType`+`Side`) — indexing by game state, which needs no animator at all.
+
+So `SpriteSheet.Animated` stays deleted, and the reasoning is unchanged from one consumer to nine. **But the count is not the evidence, and pretending otherwise would repeat §1.17's own mistake.** All nine sets of art were authored by the same hand, in the same pass, under the same constraint — `.pix` is a text grid, and a walk cycle in text is four grids to keep in sync by hand. The pipeline made frame-selection art cheap and cycling art expensive, so the games asked for what was cheap. Nine consumers all shaped by one tool is one data point wearing nine hats.
+
+The only genuine multi-frame cycle in the repo is the four-frame car in `assets/experiments/car/` — body bobbing on `0,-1,-2,-1` while the wheels stay planted, wheels rotating 45° a frame so a 2-fold-symmetric bar loops seamlessly. It is wired into no game, which is why it settles nothing.
+
+**Revised trigger**: stop waiting for consumer #N. Restore an animator when something needs a cycle — a walk, a spin, a flame — and note that the `.pix` front-end will resist authoring one, which is a fact about the tooling and not about the need.
+
+### 9.3 One palette per game, and the family gate that came with it
+
+The obvious move was one palette for the repo, and it was tried: `assets/palette.gpl`, 13 colours, four ramps. Thirteen colours cannot carry nine art directions. Pushed to cover a vaporwave rhythm game and an ash-grey catacomb at once, a shared palette does not produce nine cohesive games — it produces nine washed-out ones, and every sprite starts fighting for the same mid-tone.
+
+So each game got its own (16–23 colours), and the constraint moved up a level: **every palette carries the shared `outline` `#1A1A1A` spine, and nothing else is mandated.** Hue, ramp count and UI chrome are each game's own call, because that is precisely the axis nine samples exist to differ on.
+
+That split forced a second checker. `check-palette-all` asks "does this sprite match *a* palette" — and once palettes are per-game it will happily bless a set of nine that have drifted into nine unrelated-looking things, each internally consistent. `check-palettes` asks the other question: do the palettes still form a family? Splitting a constraint per-consumer means something must now check the consumers against each other; the per-consumer check no longer sees it.
+
+### 9.4 Nine files of the same shape, and still nothing to extract
+
+Every game grew an `*Art.cs`: a `sealed record` of `Texture2D` fields plus a `NineSlice`, integer scale constants, `Rectangle` helpers for indexing sheets, and a `static Load(ContentManager)`. Nine for nine, 35–73 lines each, converged without coordination.
+
+By this document's own methodology — extract at three consumers (§8 Tier D) — that is an overwhelming case. It is still the wrong call, and the reason is a real refinement of the rule:
+
+**What repeats is the shape, not the code.** The field lists are disjoint (`Felt`/`Units`/`Coin` vs `Horizon`/`Lane`/`Notes`/`Receptor`). The scale constants have different values *for stated per-game reasons* — AutoBattler's units are 3x because at 2x "they read as counters sitting in a large empty square"; Roguelike is 1x because a 60×34 map has no room to magnify. The frame math is indexed by each game's own enum. A base class would abstract over nothing: every line is per-game, and what recurs is the *silhouette* of the file.
+
+Extracting it would produce a type whose only content is `ContentManager` plumbing, and every game would still write all of the lines it writes today, now with an inheritance edge. **Count duplicated lines, not duplicated outlines.** Three games doing the same thing justify a library type; nine games doing the analogous thing may justify only a convention — which is what this now is, documented in CLAUDE.md and enforced by nothing.
+
+### 9.5 A check that cries wolf gets muted, so the metric had to be right
+
+Ramp-collision detection originally scored lightness as HSV `V`. `V` is `max(r,g,b)`, so every colour with one channel at 255 scores exactly 100 no matter how pale it is — `#FF6CBA` and `#FFB0DE` were "the same brightness". That was harmless while the repo held one palette of mid-tones and produced zero false positives.
+
+It stopped being harmless the instant the palettes gained bright ramps: five false collisions across the new palettes, all in the vaporwave and candy-reef directions where saturated near-255 colours are the whole point. The cost of a wrong check is not the wrong answer, it is that the next real one gets waved through — five false positives is exactly the dose that teaches a person to stop reading the output.
+
+Switching to Oklab `L` separated them properly. The historical `#2A5DA0`/`#3A5FA0` collision sits 1.2 apart under Oklab; the tightest *legitimate* neighbours in the repo (`blue-4`/`blue-5-hilite`) sit 5.8 apart. The threshold stayed at 2 and the false positives went to zero. **A heuristic validated against one narrow sample will pass and then fail silently when the sample widens** — the same lesson as §1.17, arriving from the tooling side.
+
+### 9.6 Making the source of truth diffable
+
+Committed PNGs are opaque to review: `git diff` says a binary file changed. The `.pix` format — a key mapping single characters to palette *entry names*, then a grid — buys three things at once, and the third is why it beat "just use Aseprite":
+
+1. `git diff` shows which pixels changed.
+2. Every pixel names a palette entry, so a `.pix` **cannot** be off-palette. It skips the conform step entirely rather than passing it.
+3. `.` is the only transparency, so binary alpha is structural rather than checked.
+
+53 of the repo's 62 sprites now live this way. The PNG beside each one is a build artefact that happens to be committed because MGCB wants a file on disk, and `check-pix-all` is what keeps that claim honest — hand-edit an export and CI says so. It is not a replacement for a real editor: hand-polish and anything much above 64x64 still want Aseprite, which is why the `.aseprite` sources and the conform path both stay.
+
+### 9.7 Residuals
+
+Known and deliberately not fixed in this pass:
+
+1. **`NineSlice` has no unit test.** `PixelDraw` solved the same problem by splitting the hard part — the tile clipping — into a pure `TileRects` enumerator that returns source/destination pairs, which is directly assertable; that is 10 of the 290 tests. `NineSlice` computes nine rectangles of comparable fiddliness and emits them straight into a `SpriteBatch`, so nothing can see them. It should get the same treatment: a pure `Slices(destination, scale)` enumerator, with `Draw` as the thin loop over it.
+2. **Ramp collisions are reported as INFO, not failures.** Resolving one repaints committed art and picking the winner is a human call. `check-palettes` fails only on the missing-spine case.
+3. **The smoke suite still cannot run in CI** (§ README: needs a window server). Every gate added in this pass is static analysis over checked-in sources. Nothing in CI proves the nine games still *boot* with their new content — that remains a local `scripts/smoke-all.sh` from a GUI session, and it is the one hole in the wall.
