@@ -1,5 +1,18 @@
 name: CI
 
+# Every job builds Debug, deliberately. ImageSharp 4.x validates its licence in
+# an MSBuild target with ContinueOnError="$(Configuration.StartsWith('Debug'))",
+# so the missing-licence message is a warning in Debug and a hard *error* in
+# every other configuration, with no opt-out property short of a purchased key.
+# mgf-tools takes ImageSharp, and the Tests project references mgf-tools, so a
+# Release build fails all three jobs. Building Debug keeps the actively
+# maintained 4.x line at the cost of never compiling Release here.
+#
+# Known consequence: `dotnet build -c Release` still fails locally for the same
+# reason, and Release is not exercised anywhere. Revisit if this ships — either
+# buy a licence and inject $(SixLaborsLicenseKey), or drop to 2.1.13, the last
+# Apache-2.0 release, which is a verified drop-in for the APIs used here.
+
 on:
   push:
     branches: [main]
@@ -18,9 +31,9 @@ jobs:
       - name: Restore
         run: dotnet restore src/MonoGame.GameFramework.Tests/MonoGame.GameFramework.Tests.csproj
       - name: Build
-        run: dotnet build src/MonoGame.GameFramework.Tests/MonoGame.GameFramework.Tests.csproj --no-restore --configuration Release
+        run: dotnet build src/MonoGame.GameFramework.Tests/MonoGame.GameFramework.Tests.csproj --no-restore --configuration Debug
       - name: Test
-        run: dotnet test src/MonoGame.GameFramework.Tests/MonoGame.GameFramework.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test src/MonoGame.GameFramework.Tests/MonoGame.GameFramework.Tests.csproj --no-build --configuration Debug --logger "trx;LogFileName=test-results.trx"
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -45,7 +58,7 @@ jobs:
       # compile-checking C#, not producing runnable .xnb content. Don't drop
       # this flag without adding those system deps.
       - name: Build all projects (C# only, MGCB skipped)
-        run: dotnet build Game.sln --no-restore --configuration Release -p:DesignTimeBuild=true
+        run: dotnet build Game.sln --no-restore --configuration Debug -p:DesignTimeBuild=true
 
   static-checks:
     name: mgf-tools drift checks
@@ -62,32 +75,80 @@ jobs:
       # fresh checkout has no Content/bin — it would skip every sample and
       # report a meaningless pass. It stays a local pre-run guard.)
       - name: Build mgf-tools
-        run: dotnet build src/MonoGame.GameFramework.Tools/MonoGame.GameFramework.Tools.csproj --configuration Release
+        run: dotnet build src/MonoGame.GameFramework.Tools/MonoGame.GameFramework.Tools.csproj --configuration Debug
       - name: Spritefont charset coverage
-        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- lint-all-samples
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Debug -- lint-all-samples
       - name: csproj TargetFramework / package version drift
-        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-versions
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Debug -- check-versions
       - name: Game1.cs boot conventions
-        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-boot-all
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Debug -- check-boot-all
       # Self-limiting: samples with no textures in their .mgcb are skipped, so
       # this stays silent until a game actually ships sprites.
       - name: Pixel-art sprite conventions
-        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-sprites-all
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Debug -- check-sprites-all
       # Palette conformance over assets/, template/, and every sample's
       # Content/sprites. This is the gate that lets the art front-end stay
       # swappable: whatever drew a sprite, it only lands if it went through
       # conform-sprite first. Same self-limiting rule — no sprites, no output.
       - name: Palette conformance
-        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-palette-all
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Debug -- check-palette-all
       # Every palette in the repo carries the shared outline colour and has no
       # two colours competing for one ramp slot. With one palette per game this
       # is what stops nine art directions drifting into nine unrelated-looking
       # games — check-palette-all only asks whether art matches *a* palette, not
       # whether the palettes themselves still form a family.
       - name: Palette family
-        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-palettes
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Debug -- check-palettes
       # The .pix text sources are the art; the PNGs beside them are build
       # artefacts that happen to be committed, because MGCB wants files on disk.
       # This is what keeps that claim true — hand-edit an export and CI says so.
       - name: Sprite sources match their exports
-        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-pix-all
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Debug -- check-pix-all
+      # Animation strips only. Self-limiting on the `frames N` directive: a .pix
+      # without it is a still and is skipped, so this stays silent until a
+      # sprite actually claims to be a cycle. Catches the mechanical failures —
+      # a frame identical to its neighbour does nothing, a transparent frame is
+      # a hole, a width that does not divide shifts every frame after the first.
+      # Whether the cycle *looks* right is not decidable here; that is what
+      # scripts/anim-preview.sh and a human are for.
+      - name: Animation cycles
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Debug -- check-anim-all
+
+  smoke:
+    name: Smoke-run all 9 samples (xvfb)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      # Unlike build-samples, this job really runs the games, so it needs both
+      # halves of what DesignTimeBuild=true lets that job skip: the MGCB native
+      # deps to compile content (freetype, freeimage) and a GL/audio stack plus
+      # a virtual display to open a window against.
+      #
+      # Without a window server each sample gets past init and content-load and
+      # then blocks forever in SDL waiting on a vsync that never arrives — every
+      # sample times out with rc=142 and a zero-byte log, which looks exactly
+      # like a mass crash. xvfb is what makes the difference; see CLAUDE.md.
+      - name: Install MGCB and SDL/GL runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb libfreetype6 libfreeimage3 libopenal1 libsdl2-2.0-0 \
+            libgl1 libglu1-mesa mesa-utils
+      - name: Restore
+        run: dotnet restore Game.sln
+      # Software rendering: the runner has no GPU, and llvmpipe is enough to
+      # prove a sample boots, loads content and survives N frames — which is the
+      # entire question this job answers.
+      - name: Smoke-run every sample
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: xvfb-run -a --server-args="-screen 0 1280x720x24" scripts/smoke-all.sh 120 90
+      - name: Upload smoke logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-logs
+          path: /tmp/smoke-*.log
