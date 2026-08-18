@@ -1,0 +1,45 @@
+GIMP Palette
+Name: Corsair (pipeline test)
+Columns: 5
+#
+# THIS IS NOT THE CANONICAL PALETTE. assets/palette.gpl is.
+#
+# Scoped to the corsair pipeline test in this directory and nothing else.
+#
+# Every colour here was MEASURED, not chosen: it is the output of
+#
+#   mgf-tools extract-palette --input <reference> --output palette.gpl
+#
+# with the generated hue-family names (amber-1, magenta-0, ...) replaced by
+# role names, which is the one edit that tool asks you to make. The RGB values
+# are the reference's own, byte for byte, with a single exception noted below.
+#
+# That matters more than it sounds. The first version of this palette was
+# invented by reading hex codes off a screenshot, and it was wrong in a way no
+# gate could ever report: check-palette only asks whether the art matches the
+# palette, so art and palette invented together agree perfectly and are both
+# wrong. Measuring the source is the only thing that breaks that loop.
+#
+# The exception: the reference outlines in #000000, and every palette in this
+# repo shares `outline` #1A1A1A (check-palettes enforces it). extract-palette
+# rewrites the darkest low-chroma entry to the spine and conform-sprite then
+# moves the art onto it -- 84 px, a 0.2178 Oklab move, the largest single
+# change in the import and the only deliberate one.
+#
+# 0 ramp collisions, verified by Palette.FindRampCollisions via check-palettes.
+#
+ 26  26  26	outline
+ 80   0   0	crimson-0-shadow
+176  40  96	crimson-1
+248  64 112	crimson-2-hilite
+248 116 108	blush
+248 210 194	skin
+137  90  27	leather-0-shadow
+216 160  56	leather-1
+248 216 112	gold
+  0  37  91	denim-0-shadow
+ 35  73 120	denim-1
+ 54 111 164	denim-2-hilite
+ 80  80  80	steel
+214 212 213	bone-1
+255 255 255	bone-2-hilite
