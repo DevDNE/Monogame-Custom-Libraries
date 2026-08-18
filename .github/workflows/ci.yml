@@ -73,3 +73,21 @@ jobs:
       # this stays silent until a game actually ships sprites.
       - name: Pixel-art sprite conventions
         run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-sprites-all
+      # Palette conformance over assets/, template/, and every sample's
+      # Content/sprites. This is the gate that lets the art front-end stay
+      # swappable: whatever drew a sprite, it only lands if it went through
+      # conform-sprite first. Same self-limiting rule — no sprites, no output.
+      - name: Palette conformance
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-palette-all
+      # Every palette in the repo carries the shared outline colour and has no
+      # two colours competing for one ramp slot. With one palette per game this
+      # is what stops nine art directions drifting into nine unrelated-looking
+      # games — check-palette-all only asks whether art matches *a* palette, not
+      # whether the palettes themselves still form a family.
+      - name: Palette family
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-palettes
+      # The .pix text sources are the art; the PNGs beside them are build
+      # artefacts that happen to be committed, because MGCB wants files on disk.
+      # This is what keeps that claim true — hand-edit an export and CI says so.
+      - name: Sprite sources match their exports
+        run: dotnet run --project src/MonoGame.GameFramework.Tools --no-build --configuration Release -- check-pix-all
