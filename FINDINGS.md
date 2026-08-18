@@ -667,6 +667,209 @@ Committed PNGs are opaque to review: `git diff` says a binary file changed. The 
 
 Known and deliberately not fixed in this pass:
 
-1. **`NineSlice` has no unit test.** `PixelDraw` solved the same problem by splitting the hard part — the tile clipping — into a pure `TileRects` enumerator that returns source/destination pairs, which is directly assertable; that is 10 of the 290 tests. `NineSlice` computes nine rectangles of comparable fiddliness and emits them straight into a `SpriteBatch`, so nothing can see them. It should get the same treatment: a pure `Slices(destination, scale)` enumerator, with `Draw` as the thin loop over it.
+1. ~~**`NineSlice` has no unit test.**~~ **Resolved in §10.** It got exactly the treatment described here: a pure `SliceRects(source, border, destination, scale)` enumerator with `Draw` as the thin loop over it, and 16 tests.
 2. **Ramp collisions are reported as INFO, not failures.** Resolving one repaints committed art and picking the winner is a human call. `check-palettes` fails only on the missing-spine case.
-3. **The smoke suite still cannot run in CI** (§ README: needs a window server). Every gate added in this pass is static analysis over checked-in sources. Nothing in CI proves the nine games still *boot* with their new content — that remains a local `scripts/smoke-all.sh` from a GUI session, and it is the one hole in the wall.
+3. ~~**The smoke suite still cannot run in CI**~~ **Resolved in §10**, from both directions: a `smoke` job now runs `scripts/smoke-all.sh` under `xvfb`, and the parts of the draw path that could be separated from `SpriteBatch` were, so draw *order* and nine-slice *geometry* are now asserted by ordinary unit tests rather than by looking at the screen.
+
+
+## §10 — Audit pass: the cost of an abstraction nothing exercised (NEW 2026-08-18)
+
+A full audit of the library, the tooling and the nine samples. Entry state was clean: build green, 290 tests passing, all seven gates reporting zero violations. Sixteen defects came out of it, and the two worst were in the same place — the part of the library that nine games had never once used.
+
+### 10.1 The finding behind the finding
+
+Every sample booted with a single `PushState(titleState)` and then called `ChangeState` forever. **There was not one `PopState` call outside the test suite.** The stack was therefore never deeper than one, which means `Obscuring()` and `Revealed()` — fired only by pushing onto a non-empty stack and by popping — **never executed in any of the nine games**. All nine implemented both anyway: roughly 27 lines of boilerplate wired to hooks that could not fire, and BattleGrid carried a comment describing overlay behaviour no code path could reach.
+
+That is exactly the condition §5 was written to catch, and the rule that deleted `Core.Entity` and `SpriteSheet.Animated` — *zero consumers across all nine games*. The stack survived it because a state **machine** and a state **stack** share an API, and nobody noticed the second half was never called.
+
+It was also broken, in three separate ways, all of which only a real consumer could surface:
+
+1. **`Draw` painted the stack top-first.** `Stack<T>` enumerates in pop order, so `AddRange` yields `[top .. bottom]` and painting it forwards drew the topmost state first and let everything beneath cover it. A pushed pause overlay would have rendered *behind* the battle.
+2. **`IsActive` gated both `Update` and `Draw`,** so "frozen but still on screen" — the entire point of a pause overlay — was inexpressible. The choice was between a paused game that vanishes and a paused game that keeps playing.
+3. **A state revealed by a `PopState` during `Update` ran again in the same pass.** `Update` goes top-down, so an overlay popping itself hands control to a state further down the buffer that has not been visited yet — which sees the same input that dismissed the overlay. One press of the pause key closed the menu and instantly reopened it.
+
+Defect 1 was found by reading. Defects 2 and 3 were found by *writing the consumer*: `BattleGrid/GameStates/PauseState.cs` exists to be that consumer, not to be a demo. The decision was to validate the abstraction rather than delete it — a stack is the right shape for an overlay, and `DebugOverlay` had already been forced to implement pause *outside* the state system because the state system could not carry it.
+
+**The general lesson, and it is the same one as §5 with the sign flipped:** unused surface is not merely dead weight to be deleted. While it sits there it also accumulates defects at full rate and reports none of them, because the only thing that reports a defect is a consumer. Deleting it and proving it are both fine; leaving it is the option that stores up the bill.
+
+### 10.2 A gate cannot check what it cannot see
+
+`DebugOverlay.Draw` called a bare `spriteBatch.Begin()` — the precise pattern `check-sprites` was built to catch, and one this file already insists on fixing even in overlays that draw only text.
+
+It was never reported. `SpriteConventionChecker.Check` opened with `if (!File.Exists(mgcb)) return`, and the library has no `Content.mgcb`. The self-limiting rule that correctly silenced the rectangle-only samples also silenced **the one project whose code runs inside all nine games that do ship textures**.
+
+The fix reads the rule off project structure instead of off a single missing file:
+
+| project shape | content checks | source scan |
+|---|---|---|
+| `.mgcb` with texture blocks | yes | yes |
+| `.mgcb`, no texture blocks | n/a | **no** — opted out of sprites |
+| no `.mgcb` at all | n/a | **yes** — shared code |
+
+Verified by reintroducing the bare `Begin()` and watching CI fail on it, then removing it and watching CI pass.
+
+**Lesson:** a self-limiting gate needs its limit expressed as a property of the thing being checked, not as an early return on a missing file. "No content pipeline" and "chose not to have sprites" look identical to `File.Exists` and mean opposite things.
+
+### 10.3 The rest
+
+Fourteen further defects, all fixed, each with a regression test that was confirmed to fail without its fix:
+
+- **`SaveSystem`** — `TryLoad` propagated `JsonReaderException`, so a hand-edited or half-written save crashed the game at the moment it offered a Continue button; `Save` wrote in place, so an interrupted write produced exactly that file. Now guarded, and written via temp-file-and-move.
+- **`Camera2D`** — `FollowLerp` was applied per *frame*, so the camera closed on the player at a different speed at 30fps than at 144fps. `dt` was already being computed and used only for shake. Now converted to a per-1/60s fraction, arithmetically identical at the default fixed timestep.
+- **`SettingsManager`** — no failure path at all, and settings load during boot, so corrupt JSON was a crash before a window existed.
+- **`UIManager`** — cross-group hit-testing walked `Dictionary.Values`, so two overlapping elements in different groups resolved in undefined order. Groups now stack in creation order.
+- **`TextManager`** — captured the font at `AddText` and `LoadContent` never backfilled, so text registered early kept a null font forever and threw inside `Draw`, one frame from the cause.
+- **`SpriteSheet.Position`** — a settable field initialised once from `DestinationFrame` and read by nothing, so assigning it looked like it moved the sprite and did not. Now derived. Three BattleGrid call sites were writing it; one of them, `Projectile`, was also using it as its float position accumulator, which the integer destination rect cannot carry — that entity now owns its own `Vector2`.
+- **`Tween.Reset`** rewound `Elapsed` but left `Current` at the end value. **`LogBox`** faded by queue position, so every line shifted brightness as the box filled and the newest never reached full opacity. **`TileMap.WorldToCell`** truncated toward zero, folding negative coordinates onto cell 0; **`GridMath.TryMouseToCell`** set `-1` on two of its four failing edges. **`EventManager`** leaked a null delegate entry per string event unsubscribed, and allocated a `GameEventArgs` per typed publish whether or not anything listened. **`ObjectPool.Return`** had no double-return guard (now debug-only). **`SceneManager.RemoveScene`** left `currentScene` pointing at unloaded content. **`SoundManager`**'s loaders dereferenced a null `ContentManager` while its players no-opped politely.
+
+### 10.4 Coverage, after
+
+290 → 401 tests. The additions are concentrated exactly where the audit found defects, which is not a coincidence: **every one of the sixteen was in code with no test**, and the two worst were in the only major subsystem with no *consumer* either.
+
+Newly covered: `GameStateStackTests` (the whole stacking path), `NineSliceTests` (16, on the extracted `SliceRects`), `TextManagerTests`, `SettingsManagerTests`, `SceneManagerTests`, `ServiceCollectionExtensionsTests` (resolve every registered service, and fail if `AddGameFrameworkManagers` grows one this file does not know about).
+
+### 10.4b The seventeenth finding: CI could not have been green
+
+Found only because the audit's own verification pass built Release, which nothing else here does. `dotnet build -c Release` fails the entire solution, and all three CI jobs used `--configuration Release`.
+
+The cause is a one-line condition in ImageSharp's own targets:
+
+```xml
+ContinueOnError="$(Configuration.StartsWith('Debug'))"
+```
+
+The missing-licence message is a warning in Debug and a hard error everywhere else, with no opt-out property short of a purchased key. `mgf-tools` takes ImageSharp; the Tests project references `mgf-tools`; so every job fails. §9's licence note recorded the message as an expected warning, which was true — in the only configuration anyone had built.
+
+Resolved by building Debug throughout CI, keeping the actively maintained 4.x line. The trade is explicit and recorded at the top of `ci.yml`: **Release is now compiled nowhere.** The alternative was verified before choosing — 2.1.13, the last Apache-2.0 release, builds Release clean and both image gates agree byte-for-byte on all 62 PNGs and 53 `.pix` files — and remains the escape hatch if this ships.
+
+**Lesson, and it rhymes with 10.2:** a check that only ever runs in one configuration is only evidence about that configuration. The repo had a documented, reasoned position on this dependency that was correct for Debug and silently false for the configuration CI actually used.
+
+### 10.5 Residuals
+
+1. **The tooling is still as large as the library** — `mgf-tools` 2,389 lines against ~2,400, and 98 of 401 test methods target the tools. Named rather than fixed: the gates are the repo's thesis and they earned their place across nine art directions. But the ratio is load-bearing, and §10.1 and §10.2 are both the same shape — *the checking apparatus was healthier than the thing it checked*.
+2. **The `smoke` CI job is unverified.** It is written against `ubuntu-latest` with `xvfb` and software GL; it has never run, because the smoke suite needs a window server and this machine's agent shell is not one. First push will say.
+3. **Release is compiled nowhere** — see 10.4b. Deliberate, but it means a Release-only compile error (or a `#if DEBUG` block that does not build outside Debug) would go unnoticed. The four `ObjectPool` double-return tests are `#if DEBUG` and were confirmed to compile out cleanly under 2.1.13's working Release build before that option was set aside.
+4. **Eight of the nine samples still never push a state.** BattleGrid now proves the path; the others remain state machines, which is the right shape for them. The point was never that every game needs a stack — only that something had to.
+
+---
+
+## §11 — Engine pass: the scale nothing owned, and two subsystems with no consumer (NEW 2026-08-18)
+
+Four changes, from a survey of the library against the nine samples and against §8's own deferred list. Two were defects wearing the shape of missing features; two were gaps the sample set could not have surfaced, because nine games that all run windowed at their design size and all ship mouse-only menus never ask the questions.
+
+Entry state: build green, 401 tests, all seven gates at zero. Exit: 498 tests, gates unchanged.
+
+### 11.1 The whole-pixel rule held everywhere a gate could see
+
+`PixelDraw` exists so a fractional scale is unrepresentable at the call site. `check-sprites` gates the sampler and the texture format. `.pix` makes off-palette unrepresentable. And then two scales in the same pipeline were left to float.
+
+**The camera.** `Camera2D.GetViewMatrix` translated by a raw float `Position`, and both consumers — Platformer and Shooter — draw their world with `Begin(transformMatrix: …, PointClamp)` while `FollowLerp` guarantees a fractional position on nearly every frame. Sprite edges were one screen pixel wide on some frames and two on others as the camera drifted: the exact artefact `PixelDraw` was written to prevent, one transform later.
+
+The proof was inside one file. `Platformer/GameStates/PlayState.cs` carries a comment on `DrawParallax` reasoning it out — *"The offsets are cast to int, so the layers step in whole pixels. A float offset would put the pattern on a fraction of a pixel and undo everything PointClamp is there to protect"* — and thirty lines below it the world layer went through the unrounded matrix. **The background was snapped and the foreground was not, in the same `Draw`, by the same author, who had written down the rule.** A rule stated in a comment protects the lines someone thought about while writing it.
+
+The fix rounds `M41`/`M42` — the composed offset, not the inputs. That covers camera position, shake and an odd viewport's half-pixel centre in one place, `ScreenToWorld` inherits it by inverting the same matrix, and sub-pixel motion still accumulates because `Position` itself is untouched. Snapping `Position` instead would have made a camera moving slower than a pixel per frame never move at all, which is a worse bug than the one being fixed and is why the test for it exists.
+
+**The window.** Nine games set `PreferredBackBufferWidth/Height` and drew straight to the backbuffer; no render target existed anywhere in the repo. `SettingsManager.IsFullScreen` was read by exactly one game and would have cropped or stretched everything if it had ever been set. `Rendering.ScreenScaler` renders at a fixed design size and presents at the largest whole-number scale the window holds, centred, with bars.
+
+The part worth recording is what it dragged in with it. **Mouse coordinates stop meaning what they used to** the moment the game draws at a size other than the window's, and the call sites that would each have to remember are `UIManager` hit-testing, every `GridMath` cell pick, and every `Camera2D.ScreenToWorld` aim. Converting at nine `Game1` files would have left eight more places to forget. It went into `MouseManager.PositionTransform` — a `Func<Vector2,Vector2>` rather than a `ScreenScaler` reference, so `Input` keeps no dependency on `Rendering` and a game with some other mapping can supply its own — and `GetWindowMousePosition()` keeps the raw reading for anything that genuinely wants window space.
+
+`Fit` and `WindowToVirtual` are pure statics, for the same reason `SliceRects` and `TileRects` are: they are the arithmetic that decides whether the picture is scaled by a whole number and whether a click lands where the player aimed, and neither can be asserted through a `GraphicsDevice` a test cannot create. 24 tests, including maximality — *one more whole step must overflow an axis* — because without it a fit that returned 1 everywhere would pass every other assertion in the file.
+
+A window smaller than the design size clamps to 1x and crops rather than scaling down by a fraction. Cropping loses the edges of the screen; a 0.75x scale loses every fourth pixel of all of it, everywhere.
+
+### 11.2 Two subsystems with no consumer, and the §10.1 rule applied on purpose
+
+§10.1 found that `Obscuring`/`Revealed` had never executed in any of the nine games, and drew the general lesson: unused surface accumulates defects at full rate and reports none, because the only thing that reports a defect is a consumer. The audit resolved that one by *writing* the consumer.
+
+The same condition was still true, in the same repo, in two more places:
+
+- **`GamePadManager`** — nine games, zero button reads. BattleGrid resolved it from DI and called `Update()` every frame and never asked it anything.
+- **`UIManager.SetFocus` / `FocusedElement` / `ClearFocus`** — no consumer outside its own tests.
+
+And a third fact that made them one problem rather than two: **no title screen read the keyboard at all.** All nine menus were mouse-only, in a repo whose samples are otherwise keyboard-driven games.
+
+Menu navigation in `TitleScreenState` closes all three from one change and reaches all nine games, the way the pixel skin did. The design decision that matters: **selection is `UIManager.FocusedElement`, not a private index.** A private index would have been three lines shorter and would have left the focus API dead, plus given the pointer and the keys two separate notions of "the current button" that drift apart the moment both are used. Reading `HoveredElement` in the highlight as well would light two buttons at once as soon as the pointer rested somewhere other than the keyboard's selection; instead the pointer takes focus on actual movement, which also reproduces the old mouse behaviour exactly.
+
+`ReadMenuInput()` is the seam, and it is virtual for a reason beyond rebinding: `KeyboardManager` and `GamePadManager` read the real devices, so without an override there is nothing to assert. That is the same property that let a pad manager ship through nine games untested. `NextEnabledIndex` is a public static — wrap-plus-skip is where the off-by-one hides, and the case that catches a clamp written as a wrap is a menu whose trailing entries are all disabled.
+
+### 11.3 Audio was a stub, and this one is not evidence-driven
+
+`SoundManager` was 65 lines: name-keyed load and play, no volume, no pitch, no pan, no instance handles, so nothing could be looped or stopped. `SettingsManager` persisted window geometry only. **There was no volume control anywhere in the engine.**
+
+By this file's own standards the evidence is thin — one consumer, Rhythm, firing ~55 identical clicks a session. It was built anyway, and the reason is worth stating plainly rather than dressed up as data: *no volume slider* is not a missing feature, it is a missing options screen, and no game ships without one. The Tier D bar of "3+ consumers" is the right rule for deciding whether a **pattern in game code** belongs in the library; it is the wrong rule for deciding whether a subsystem is finished.
+
+Scope was held to what that argument actually supports: three levels, per-call volume/pitch/pan, looping instances that a volume change still reaches, and persistence. No mixer graph, no buses, no ducking, no fade helpers — those want a consumer.
+
+Rhythm now pans its click by lane and lifts the pitch on a perfect, which is the smallest change that proves the arguments do something and also happens to be the reason to want them: one sample at one pitch, dead centre, fifty times a session fuses into a flat tick that tells the player nothing.
+
+`EffectiveVolume` is a pure static and the volume setters never touch `MediaPlayer` until a song has actually started — volume is set from persisted settings during boot, before `LoadContent`, which is the same window in which `SettingsManager`'s own try/catch earns its keep. `Clamp01` rejects NaN specifically: it fails both comparisons, multiplies through, and silences the game with no error at all.
+
+### 11.4 Residuals
+
+1. **None of this has been seen running.** The nine `Game1` draw paths changed and the smoke suite needs a window server, which an agent shell is not (CLAUDE.md records the `rc=142`, zero-byte-log signature). Build, 498 tests and all seven gates are green; `scripts/smoke-all.sh` from a real Terminal is the outstanding check, and the specific things to look at are letterbox bars at a resized window, F11, and that clicks still land on title buttons.
+2. **High-DPI is unaddressed.** `ScreenScaler` maps window pixels using the backbuffer size, which is correct while MonoGame DesktopGL leaves high-DPI off. A Retina-aware backbuffer would be twice the coordinate space the mouse reports and every mapping here would be out by 2x.
+3. **`Camera2D` still has no bounds clamp.** Platformer shows out-of-level space at the edges of its map and has always done so.
+4. **The two hand-rolled ephemeral-effect lists are still hand-rolled.** BattleGrid's `_sparks` and TowerDefense's `_coins` are the same `List<(Vector2, float Remaining)>` + countdown-cull + fade-draw. Two consumers, and Tier D's bar is three; left alone deliberately.
+5. **`Content.AssetCatalog` and `Debugging.ILogger` remain the last two subsystems with no consumer.** Both are Tier C holds with named triggers, and both are now the answer to "what is still in the §10.1 condition".
+
+## §12 — The gates check legality, not fidelity (NEW 2026-08-18)
+
+A reference image was recreated as a sprite. The result passed **every gate in the repo** and was wrong on four independent axes, all of which were mechanically measurable from the source file, and none of which any gate could ever have caught.
+
+| | drawn by eye | measured truth |
+|---|---|---|
+| canvas | 32x40 | **32x32** |
+| content | 25x39 — 81% of canvas width | **15x28** — 47% |
+| colours | 20, invented | **15** |
+| soles | row 39 | **row 31** |
+
+### 12.1 Why no gate could have caught it
+
+`check-palette` asks whether the art matches the palette. `check-pix-all` asks whether the PNG matches its `.pix`. `check-sprites` asks about texture format and sampler state. Every one of them is a **consistency** check between two artifacts inside the repo, and consistency is exactly what a mistake like this preserves: **art and palette invented together always agree with each other.** The palette was wrong and the art conformed to it perfectly.
+
+This is the same shape as §10.1 — unused surface reports no defects because nothing consumes it — with the roles swapped. Here the surface is heavily used and self-consistent, and the thing outside the loop is the *source of truth*, which had never been in the repo at all.
+
+The pipeline in `assets/STYLE.md` had a documented path for making art legal (GENERATE → CONFORM → GATE) and **no path for getting a reference in, and none for measuring how far the result landed.** Every judgment at the front of that pipeline was made by eye against an image nobody had measured.
+
+### 12.2 Four commands, not a new gate
+
+The fix is not a stricter gate — there is nothing to be strict about, since fidelity has no fixed target. It is measurement:
+
+- **`describe-image`** — native grid size (it detects integer upscaling: the reference was a 640x640 file of 32x32 art in 20x20 flat blocks, and a 640x640 file of 40x40 art is indistinguishable by eye), exact palette with counts, alpha, content bounding box against the cast's canvas convention.
+- **`extract-palette`** — the `.gpl` measured from the source instead of typed from a screenshot, named by ramp, spine rewritten so the output is a legal family member.
+- **`trace-pix`** — PNG → `.pix`. The format could only be authored by hand, which silently forced anything that began as an image to be re-typed from a blank grid. Round-trip with `render-pix` is the contract and is asserted.
+- **`compare-sprite`** — shape IoU (canvas- and scale-free) against canvas IoU (where the sprites actually sit). The *gap between them* is the diagnosis.
+
+The single most useful line of output in the whole exercise was `describe-image` reporting that the reference was **already on-cast**: 15x28 content in a 32x32 canvas with soles on the last row is within a pixel of STYLE.md's own "content ~16x27, soles on row 31". Nobody would have guessed that, and nobody had to.
+
+### 12.3 What `compare-sprite` found that the eye did not
+
+| | shape IoU | canvas IoU | exact px |
+|---|---|---|---|
+| v1 — freehand, 32x40 canvas | 82.2% | *n/a — canvases differ* | — |
+| v2 — freehand, measured canvas | 81.0% | 58.6% | 8.6% |
+| v2 — offset swept | 81.0% | **77.8%** | 11.9% |
+| v3 — conform + trace | **100%** | **100%** | **73.4%** |
+
+Shape IoU barely moved between the freehand attempts — 82.2% to 81.0% — because the first already had a plausible chunky-biped silhouette. Canvas IoU is where the information was: the sprite sat three columns left of where the reference puts it. Sweeping the offset found +3 in one pass, worth 19 points — and sweeping further was *worse*: aligning the bounding boxes exactly (+5) drops to 70.8%, because two sprites can share a bounding box and distribute mass differently inside it. Neither number was available to the eye, and the second contradicts the obvious heuristic.
+
+**Two metrics, because one would have hidden this.** A single blended score would have moved from 82% to 79% and read as "no better". Splitting shape from placement is what made the defect legible.
+
+**And then the fourth row happened.** Running the reference through `conform-sprite --size 32x32` and `trace-pix` takes both silhouette metrics to 100% in one command. Every one of the 84 pixels that still differs is `#000000 -> #1A1A1A`, the outline moving onto the shared spine — the single deliberate repaint in the import, and the whole of the gap between 73.4% and 100%.
+
+That is the finding underneath the finding. **Two rounds of careful freehand work were worth less than one command**, and not because of skill: the freehand rounds were reasoning from a mental image of a file that was sitting on disk unmeasured. The tools did not make the drawing better, they made the drawing unnecessary. Where a recreation is the goal, hand-authoring is the fallback for when the pipeline cannot reach — not the default.
+
+### 12.4 Both new tools shipped with a bug, and using them found both
+
+Worth recording because neither was caught by writing the tool and both were caught within minutes of pointing it at real input:
+
+**`extract-palette` named a dark red as the outline.** The first rule snapped whatever fell inside an Oklab radius of `#1A1A1A`. Pure `#000000` — the commonest outline colour in a real reference — sits **0.2175** away, outside any radius tight enough to be safe, while `#500000` sits **0.1239** *inside* it. The rule was wrong in both directions at once. The replacement is darkest-low-chroma-wins, which is what an outline actually is; chroma is what separates a silhouette from a dark ramp step, and lightness alone does not.
+
+**A hand-authored `.pix` row contained a stray `و`.** It survived a row-width check because that check counts characters and the row was still 32 of them. `render-pix` would have rejected it as unkeyed, but the general lesson is worth having: **a width check is not a content check**, and the two look identical in a passing run.
+
+### 12.5 What is still not measured
+
+1. **Nothing checks canvas convention.** `describe-image` *reports* feet-anchoring and canvas fill; no gate enforces them. STYLE.md records that the previous hero "hovered 2px for its whole life" with nothing catching it, so the failure is real and recurring. It was left as a report rather than a gate because a tile, a UI frame and a projectile are all meant to fail every one of those rules, and a gate that fires on three-quarters of the repo's PNGs teaches people to mute it. The honest version needs a way to say "this PNG is a character", which the repo has no notion of.
+2. **`compare-sprite` measures silhouette and colour, not structure.** Two sprites can score identically with the eyes in different places. Per-region deltas would catch it; nothing here does.
+3. **Light direction, ramp discipline and proportion remain judgment calls.** §9's split still holds — palette and alpha are mechanical, "lit from the wrong side" is not, and now neither is "the nose is lit from the lower-right", which the recreated reference does in contradiction of STYLE.md's own top-left rule.
+4. **The offset sweep was done by hand.** Three shell iterations over `compare-sprite`. If that pattern recurs it belongs in the tool as an `--align` flag, not in a loop someone retypes.

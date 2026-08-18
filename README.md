@@ -35,7 +35,7 @@ src/
   MonoGame.GameFramework.Rhythm/        ← 4-lane rhythm game
   MonoGame.GameFramework.VisualNovel/   ← Dialogue-tree VN with save/load
   MonoGame.GameFramework.AutoBattler/   ← Auto-chess shop + combat loop
-  MonoGame.GameFramework.Tests/         ← 290 xUnit tests
+  MonoGame.GameFramework.Tests/         ← 498 xUnit tests
 ```
 
 ## Library (`MonoGame.GameFramework`)
@@ -126,7 +126,7 @@ Consistency only half-decomposes into rules a machine can check. Palette, binary
 
 ```bash
 dotnet build Game.sln                          # Build all projects
-dotnet test  Game.sln                          # Run the 290 library + tools tests
+dotnet test  Game.sln                          # Run the 498 library + tools tests
 dotnet restore                                 # Restore NuGet packages
 scripts/smoke-all.sh                           # Launch each of the 9 samples for 120 frames, fail on crash
                                                # Needs a GUI session — see note below
@@ -159,7 +159,7 @@ Everything from `lint-all-samples` down runs in CI, except `check-content-cache-
 
 ## Tests (`MonoGame.GameFramework.Tests`)
 
-290 xUnit tests with FluentAssertions covering pure-logic pieces: `ObjectPool`, `PooledEntitySet`, `TimerManager`, `Tween`/`Easing`, `TileMap`/`TileLayer` (including `Swap` and `TryWorldToCell`), `GridMath`, `EventManager` (string + typed + `AnyEvent` hook), `SaveSystem`, `Camera2D`, `GameStateManager` lifecycle + `StackDepth`, `UIManager` + `ElementCount`, `SpriteSheet.Tint`, `TitleScreenState` registration/lifecycle, `HpBar` fill-width math, `LogBox` queue/trim, `DebugOverlay` state machine + watches + event tail + FPS rolling average, `SmokeHarness` arg parsing + frame counter, `PixelDraw.TileRects` clipping and scroll-offset arithmetic, and all ten `mgf-tools` units (`SpritefontLinter` range parsing + character coverage, `BootChecker` per-convention detection, `ContentCacheChecker` stale-artifact comparison, `VersionChecker` TFM/package drift, `SpriteConventionChecker` mgcb texture-format/padding parsing + bare-`Begin()` detection, `Palette` `.gpl` parsing + Oklab distance + ramp-collision detection, `PaletteChecker` per-sprite conformance, `PaletteRegistry` cross-palette family rules, `PixDocument`/`PixRenderer` parse + render + round-trip, `SpriteConformer` nearest-colour mapping + resampling). Rendering-dependent code (SpriteBatch/SpriteFont/GraphicsDevice) is smoke-tested via the nine sample games, automated by `scripts/smoke-all.sh`.
+498 xUnit tests with FluentAssertions covering pure-logic pieces: `ObjectPool` (including the debug double-return guard), `PooledEntitySet`, `TimerManager`, `Tween`/`Easing`, `TileMap`/`TileLayer` (including `Swap`, `TryWorldToCell`, and negative-coordinate flooring), `GridMath`, `EventManager` (string + typed + `AnyEvent` hook + subscriber bookkeeping), `SaveSystem` (round-trip, atomic write, and every corrupt-file path), `SettingsManager`, `Camera2D` including frame-rate-independent follow and whole-pixel view snapping, `ScreenScaler.Fit`/`WindowToVirtual` integer-scale letterboxing and window-to-design mapping, `SoundManager` volume mixing and clamping, `TitleScreenState` menu traversal (`NextEnabledIndex` wrap/skip plus driven activation), `GameStateManager` lifecycle + `StackDepth`, the full stacking path in `GameStateStackTests` (paint order, `IsActive`/`IsVisible`, `Obscuring`/`Revealed`, same-frame pop), `NineSlice.SliceRects` geometry, `TextManager`, `SceneManager`, `AddGameFrameworkManagers` container wiring, `UIManager` + `ElementCount` + cross-group z-order, `SpriteSheet.Tint`, `TitleScreenState` registration/lifecycle, `HpBar` fill-width math, `LogBox` queue/trim, `DebugOverlay` state machine + watches + event tail + FPS rolling average, `SmokeHarness` arg parsing + frame counter, `PixelDraw.TileRects` clipping and scroll-offset arithmetic, and all ten `mgf-tools` units (`SpritefontLinter` range parsing + character coverage, `BootChecker` per-convention detection, `ContentCacheChecker` stale-artifact comparison, `VersionChecker` TFM/package drift, `SpriteConventionChecker` mgcb texture-format/padding parsing + bare-`Begin()` detection in both game and shared-library projects, `Palette` `.gpl` parsing + Oklab distance + ramp-collision detection, `PaletteChecker` per-sprite conformance, `PaletteRegistry` cross-palette family rules, `PixDocument`/`PixRenderer` parse + render + round-trip, `SpriteConformer` nearest-colour mapping + resampling). Rendering-dependent code (SpriteBatch/SpriteFont/GraphicsDevice) is smoke-tested via the nine sample games, automated by `scripts/smoke-all.sh` — which now also runs in CI under `xvfb`. Where draw *order* or draw *geometry* could be separated from draw *execution* it has been, so `GameStateManager.Draw` and `NineSlice` are asserted directly rather than eyeballed.
 
 ## History & design rationale
 

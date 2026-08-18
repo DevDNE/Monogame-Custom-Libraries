@@ -8,22 +8,46 @@ because a rule nobody checks is a rule that decays.
 ## The pipeline
 
 ```
+  0. MEASURE    mgf-tools describe-image --input <png>
+                Native grid size (it detects integer upscaling), exact palette,
+                alpha, and where the content sits on the canvas. Do this before
+                drawing anything, every time there is a reference.
+                        |
   1. GENERATE   any front-end: a .pix text grid, hand-drawn in Aseprite,
                 PixelLab, Retro Diffusion, a nanobanana concept traced by hand.
                 Deliberately unconstrained -- this is the step that should stay
                 swappable.
                         |
-  2. CONFORM    mgf-tools conform-sprite --input <png> --output <png>
-                Nearest-palette-colour match in Oklab, binary alpha, optional
-                nearest-neighbour downsample. Mechanical and deterministic.
-                (A .pix skips this step: it cannot be off-palette.)
+  2. CONFORM    mgf-tools extract-palette --input <png> --output <gpl>
+                mgf-tools conform-sprite  --input <png> --output <png> --size ...
+                Palette measured from the source, then nearest-palette-colour
+                match in Oklab, binary alpha, box downsample. Mechanical and
+                deterministic. (A .pix skips conform: it cannot be off-palette.)
                         |
-  3. GATE       mgf-tools check-palette-all   (runs in CI)
+  2b. TRACE     mgf-tools trace-pix --input <png> --output <pix>
+                Optional. Turns the conformed PNG into a .pix so the polish
+                pass happens in a format that diffs. Round-trips exactly.
+                        |
+  3. GATE       mgf-tools check-palette-all + check-palettes + check-pix-all
+                (all three run in CI)
                 Rejects anything that did not go through step 2.
+                        |
+  4. COMPARE    mgf-tools compare-sprite --a <reference> --b <result>
+                Only when recreating something. Shape IoU, canvas IoU, exact
+                pixels, mean Oklab delta.
 ```
 
 Step 3 is what makes step 1 safe to change. Without the gate, adopting a new
 generator is a bet on discipline; with it, the worst case is a red build.
+
+**Steps 0 and 4 are newer, and they exist because the gates cannot see quality.**
+Everything in step 3 checks *legality* — palette membership, binary alpha,
+`.pix`/PNG agreement. A sprite can pass all of it and be the wrong size, on the
+wrong canvas, in a palette someone invented by squinting at a screenshot; art
+and palette invented together always agree with each other, so no gate fires.
+The first recreation attempt in `assets/experiments/corsair/` did exactly that:
+it was drawn 32x40 at 81% canvas width from 20 guessed colours, when one
+`describe-image` call would have said 32x32, 47%, 15 colours. Measure first.
 
 ### The `.pix` front-end
 
