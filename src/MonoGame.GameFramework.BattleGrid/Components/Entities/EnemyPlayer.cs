@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using MonoGame.GameFramework.Events;
+using Microsoft.Xna.Framework.Graphics;
+using MonoGame.GameFramework.BattleGrid.Components;
 using MonoGame.GameFramework.Rendering;
 
 namespace MonoGame.GameFramework.BattleGrid.Components.Entities;
@@ -22,6 +24,7 @@ public class EnemyPlayer
   public int GridRow { get; private set; } = 1;
 
   private SpriteSheet character;
+  private Texture2D _shotSheet;
   private readonly DrawManager _drawManager;
   private readonly EventManager _eventManager;
   private readonly Random _random = new();
@@ -41,12 +44,12 @@ public class EnemyPlayer
 
   public void LoadContent(ContentManager content)
   {
+    _shotSheet = content.Load<Texture2D>(BattleArt.Shots);
     Vector2 pos = Grid.EnemyCellTopLeft(GridCol, GridRow);
     character = SpriteSheet.Static(
-      Primitives.Pixel,
+      content.Load<Texture2D>(BattleArt.Virus),
       new Rectangle((int)pos.X, (int)pos.Y, BattleConfig.DisplayWidth, BattleConfig.DisplayHeight),
       name: "Enemy");
-    character.Tint = new Color(240, 100, 100);
     hitbox = new Rectangle((int)pos.X, (int)pos.Y, BattleConfig.DisplayWidth, BattleConfig.DisplayHeight);
     _drawManager.AddSprite(character);
   }
@@ -133,8 +136,8 @@ public class EnemyPlayer
 
   private void FireSingleShot()
   {
-    float y = character.Position.Y + BattleConfig.DisplayHeight * 0.5f - 5f;
-    SpawnProjectile(new Vector2(character.Position.X - 14, y));
+    float y = character.Position.Y + BattleConfig.DisplayHeight * 0.45f - BattleConfig.ProjectileDisplaySize * 0.5f;
+    SpawnProjectile(new Vector2(character.Position.X - BattleConfig.ProjectileDisplaySize, y), BattleArt.EnemyShot);
     _eventManager.TriggerEvent("EnemyFiredProjectile", this, new GameEventArgs("Enemy fired single shot"));
   }
 
@@ -142,16 +145,16 @@ public class EnemyPlayer
   {
     for (int row = 0; row < 3; row++)
     {
-      float y = Grid.RowCenterY(row) - 5f;
-      float x = BattleConfig.EnemyBoardX - 14f;
-      SpawnProjectile(new Vector2(x, y));
+      float y = Grid.RowCenterY(row) - BattleConfig.ProjectileDisplaySize * 0.5f;
+      float x = BattleConfig.EnemyBoardX - BattleConfig.ProjectileDisplaySize;
+      SpawnProjectile(new Vector2(x, y), BattleArt.EnemyWideShot);
     }
     _eventManager.TriggerEvent("EnemyFiredProjectile", this, new GameEventArgs("Enemy fired wide shot"));
   }
 
-  private void SpawnProjectile(Vector2 pos)
+  private void SpawnProjectile(Vector2 pos, Rectangle frame)
   {
-    Projectile p = new(_drawManager, pos, new Vector2(-8, 0), new Color(255, 140, 60));
+    Projectile p = new(_drawManager, _shotSheet, frame, pos, new Vector2(-8, 0));
     _drawManager.AddSprite(p.GetSprite());
     _projectiles.Add(p);
   }

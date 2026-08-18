@@ -48,8 +48,11 @@ public class ShopState : GameState
   // Board origin cached once per Entered.
   private Vector2 _boardOrigin;
 
-  public ShopState(ServiceProvider sp, SpriteFont font, GameModel model, int vw, int vh, Action onStartCombat)
+  private readonly AutoBattlerArt _art;
+
+  public ShopState(ServiceProvider sp, SpriteFont font, GameModel model, AutoBattlerArt art, int vw, int vh, Action onStartCombat)
   {
+    _art = art;
     _keyboard = sp.GetService<KeyboardManager>();
     _mouse = sp.GetService<MouseManager>();
     _font = font;
@@ -169,8 +172,10 @@ public class ShopState : GameState
 
   public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
   {
-    spriteBatch.Begin();
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, _viewportWidth, _viewportHeight), new Color(18, 22, 34));
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+    PixelDraw.Tile(spriteBatch, _art.Felt,
+      new Rectangle(0, 0, _viewportWidth, _viewportHeight), AutoBattlerArt.FeltScale,
+      tint: new Color(150, 150, 150));
     DrawBoard(spriteBatch);
     DrawUnits(spriteBatch);
     DrawCards(spriteBatch);
@@ -185,14 +190,15 @@ public class ShopState : GameState
       for (int c = 0; c < Board.Columns; c++)
       {
         Rectangle cell = CellRect(c, r);
-        Color fill = c < Board.PlayerSideEndColExclusive ? new Color(34, 46, 72) : new Color(72, 38, 46);
-        Primitives.DrawRectangle(spriteBatch, cell, fill);
+        PixelDraw.Tile(spriteBatch, _art.Felt, cell, AutoBattlerArt.FeltScale);
       }
-    // Divider
+
+    // The divider stays a primitive: it is a rule between two halves of the
+    // board, not an object on it, and one 2px line does not want a texture.
     int midX = (int)_boardOrigin.X + Board.PlayerSideEndColExclusive * BoardCellSize;
     Primitives.DrawRectangle(spriteBatch,
       new Rectangle(midX - 1, (int)_boardOrigin.Y, 2, Board.Rows * BoardCellSize),
-      new Color(180, 180, 200));
+      new Color(198, 152, 104));
   }
 
   private void DrawUnits(SpriteBatch spriteBatch)
@@ -207,14 +213,13 @@ public class ShopState : GameState
   private void DrawUnit(SpriteBatch spriteBatch, Unit u, Rectangle cell)
   {
     UnitStats.Stats s = u.Stats;
-    Color tint = u.Side == Side.Player ? s.PlayerTint : s.EnemyTint;
-    Rectangle inner = new(cell.X + 6, cell.Y + 6, cell.Width - 12, cell.Height - 12);
-    Primitives.DrawRectangle(spriteBatch, inner, tint);
-    HpBar.Draw(spriteBatch, new Rectangle(inner.X, inner.Bottom - 8, inner.Width, 5), u.Hp, s.MaxHp, new Color(120, 220, 140));
-    // Type letter
-    string letter = s.Name[..1];
-    Vector2 sz = _font.MeasureString(letter);
-    spriteBatch.DrawString(_font, letter, new Vector2(inner.Center.X - sz.X / 2f, inner.Y + 6), Color.White);
+    int size = AutoBattlerArt.UnitSize * AutoBattlerArt.UnitScale;
+    int x = cell.Center.X - size / 2;
+    int y = cell.Bottom - size - 2;
+    PixelDraw.Frame(spriteBatch, _art.Units, AutoBattlerArt.RectFor(u.Type, u.Side),
+      x, y, AutoBattlerArt.UnitScale);
+    HpBar.Draw(spriteBatch, new Rectangle(cell.X + 8, cell.Y + 4, cell.Width - 16, 5),
+      u.Hp, s.MaxHp, new Color(98, 148, 114));
   }
 
   private void DrawCards(SpriteBatch spriteBatch)
@@ -229,9 +234,15 @@ public class ShopState : GameState
   {
     UnitStats.Stats s = UnitStats.Of(t);
     bool affordable = _model.Gold >= s.Cost;
-    Color bg = beingDragged ? new Color(30, 30, 42) : (affordable ? new Color(50, 56, 84) : new Color(34, 36, 48));
-    Primitives.DrawRectangle(spriteBatch, rect, bg);
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(rect.X + 14, rect.Y + 14, rect.Width - 28, 60), s.PlayerTint);
+    // Unaffordable cards are dimmed rather than recoloured, so the frame stays
+    // the same object and only its reachability changes.
+    Color tint = beingDragged ? new Color(120, 120, 120) : (affordable ? Color.White : new Color(96, 96, 104));
+    _art.Frame.Draw(spriteBatch, rect, AutoBattlerArt.FeltScale, tint);
+
+    // The card shows the actual piece, at the size it will be on the board.
+    int size = AutoBattlerArt.UnitSize * AutoBattlerArt.UnitScale;
+    PixelDraw.Frame(spriteBatch, _art.Units, AutoBattlerArt.RectFor(t, Side.Player),
+      rect.Center.X - size / 2, rect.Y + 16, AutoBattlerArt.UnitScale, tint);
     Vector2 nameSz = _font.MeasureString(s.Name);
     spriteBatch.DrawString(_font, s.Name, new Vector2(rect.Center.X - nameSz.X / 2f, rect.Y + 90), Color.White);
     string stats = $"HP {s.MaxHp}  ATK {s.Attack}  RNG {s.Range}";

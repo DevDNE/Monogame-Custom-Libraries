@@ -1,0 +1,23 @@
+# Nine-slice frame, 4px border: an earth surround over slate.
+#
+# The outer band is path-*, the same browns as the road, and the inside is
+# keep-*. This palette has no timber ramp of its own — the game only ever
+# needed grass, road, masonry and threat — and inventing one for a menu would
+# have added two colours nothing else could use.
+name towerdefense-ui-frame
+size 16 16
+key o outline
+key W path-2
+key w path-0-shadow
+key k keep-1
+key K keep-0-shadow
+pixels
+oooooooooooooooo
+oWWWWWWWWWWWWWWo
+oWwwwwwwwwwwwwWo
+oWwkkkkkkkkkkwWo
+*8 oWwkKKKKKKKKkwWo
+oWwkkkkkkkkkkwWo
+oWwwwwwwwwwwwwWo
+owwwwwwwwwwwwwwo
+oooooooooooooooo

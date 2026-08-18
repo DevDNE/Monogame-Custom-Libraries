@@ -1,0 +1,21 @@
+# Nine-slice frame, 4px border. Every button and panel in the game.
+#
+# The top edge is bright and the bottom edge is dark, so a frame stretched to
+# any size still reads as lit from above — the corners carry the light, which
+# is exactly the part a nine-slice never scales.
+name battlegrid-ui-frame
+size 16 16
+key o outline
+key H cyan-2
+key d void-2
+key m void-1
+pixels
+oooooooooooooooo
+oHHHHHHHHHHHHHHo
+oHooooooooooooHo
+oHoddddddddddoHo
+*8 oHodmmmmmmmmdoHo
+oHoddddddddddoHo
+oHooooooooooooHo
+oddddddddddddddo
+oooooooooooooooo

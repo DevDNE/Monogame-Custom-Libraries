@@ -1,0 +1,20 @@
+# Backdrop for the whole screen: the inside of the network.
+#
+# Tiles seamlessly — the traces run edge to edge, so the join lands mid-trace
+# where there is nothing to line up. The node blocks sit well inside the tile
+# for the same reason.
+name battlegrid-bg
+size 32 32
+key d void-0-deep
+key m void-1
+key n void-2
+pixels
+*5 ddddddmdddddddddddddddmddddddddd
+dddddnnndddddddddddddnnndddddddd
+mmmmmmnmmmmmmmmmmmmmmnmmmmmmmmmm
+dddddnnndddddddddddddnnndddddddd
+*13 ddddddmdddddddddddddddmddddddddd
+dddddnnndddddddddddddnnndddddddd
+mmmmmmnmmmmmmmmmmmmmmnmmmmmmmmmm
+dddddnnndddddddddddddnnndddddddd
+*8 ddddddmdddddddddddddddmddddddddd

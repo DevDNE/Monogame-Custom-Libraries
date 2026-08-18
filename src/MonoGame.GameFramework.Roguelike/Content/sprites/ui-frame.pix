@@ -1,0 +1,21 @@
+# Nine-slice frame, 4px border: mortared stone, the same greys as the walls.
+#
+# The UI is made of the dungeon rather than laid over it — a menu in any other
+# material would be the only object in this game that is not underground.
+name roguelike-ui-frame
+size 16 16
+key o outline
+key e crypt-4
+key d crypt-3
+key c crypt-2
+key b crypt-1
+pixels
+oooooooooooooooo
+oeeeeeeeeeeeeeeo
+oeddddddddddddeo
+oedccccccccccdeo
+*8 oedcbbbbbbbbcdeo
+oedccccccccccdeo
+oeddddddddddddeo
+oddddddddddddddo
+oooooooooooooooo

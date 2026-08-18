@@ -65,11 +65,17 @@ public class Player
     return true;
   }
 
-  public void Draw(SpriteBatch spriteBatch)
+  /// <summary>
+  /// Flashes while invulnerable by tinting the sprite rather than by hiding it.
+  /// Blinking a walker in and out at 10Hz makes it hard to steer at exactly the
+  /// moment the player most needs to; a tint says the same thing and keeps the
+  /// silhouette on screen the whole time.
+  /// </summary>
+  public void Draw(SpriteBatch spriteBatch, ShooterArt art)
   {
-    Color tint = _invuln > 0f
-      ? (((int)(_invuln * 20) % 2) == 0 ? new Color(200, 230, 255) : new Color(120, 170, 220))
-      : new Color(80, 180, 255);
-    Primitives.DrawRectangle(spriteBatch, Bounds, tint);
+    Color tint = _invuln > 0f && ((int)(_invuln * 20) % 2) == 0
+      ? new Color(255, 128, 108)
+      : Color.White;
+    PixelDraw.Sprite(spriteBatch, art.Player, Bounds.X, Bounds.Y, ShooterArt.EntityScale, tint);
   }
 }

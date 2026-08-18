@@ -1,0 +1,15 @@
+# The judgement window, one per lane. A hollow frame so a note passing through
+# it stays fully visible — the player is timing the note against this, and an
+# opaque target would hide the exact moment that matters.
+name rhythm-receptor
+size 50 20
+key o outline
+key G grid-lit
+pixels
+oooooooooooooooooooooooooooooooooooooooooooooooooo
+oGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGo.
+oGooooooooooooooooooooooooooooooooooooooooooooooGo
+*14 oGo............................................oGo
+oGooooooooooooooooooooooooooooooooooooooooooooooGo
+oGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGo.
+oooooooooooooooooooooooooooooooooooooooooooooooooo

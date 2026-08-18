@@ -6,6 +6,7 @@ using MonoGame.GameFramework.Debugging;
 using MonoGame.GameFramework.Input;
 using MonoGame.GameFramework.Lifecycle;
 using MonoGame.GameFramework.Rendering;
+using MonoGame.GameFramework.Shooter.Entities;
 using MonoGame.GameFramework.Shooter.GameStates;
 using MonoGame.GameFramework.Testing;
 using MonoGame.GameFramework.UI;
@@ -60,9 +61,11 @@ public class Game1 : Game
     _font = Content.Load<SpriteFont>("fonts/Arial");
     _debugOverlay.SetFont(_font);
 
-    PlayState playState = new(_serviceProvider, _font, ViewportWidth, ViewportHeight);
+    ShooterArt art = ShooterArt.Load(Content);
+
+    PlayState playState = new(_serviceProvider, _font, art, ViewportWidth, ViewportHeight);
     TitleState titleState = new(
-      _serviceProvider, _font, ViewportWidth, ViewportHeight,
+      _serviceProvider, _font, ViewportWidth, ViewportHeight, art,
       onPlay: () => _gameStateManager.ChangeState(playState),
       onQuit: Exit);
     _gameStateManager.PushState(titleState);

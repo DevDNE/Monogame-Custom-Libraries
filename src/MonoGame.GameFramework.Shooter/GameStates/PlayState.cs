@@ -26,6 +26,14 @@ public class PlayState : GameState
   private readonly MouseManager _mouse;
   private readonly TimerManager _timers;
   private readonly SpriteFont _font;
+  private readonly ShooterArt _art;
+
+  // Kill flashes: a world position and a countdown. Same reasoning as
+  // BattleGrid's sparks — a particle system for this would be all machinery
+  // and no feature.
+  private readonly List<(Vector2 Position, float Remaining)> _bursts = new();
+  private const float BurstDuration = 0.22f;
+
   private readonly int _viewportWidth;
   private readonly int _viewportHeight;
   private readonly Random _random = new();
@@ -38,8 +46,9 @@ public class PlayState : GameState
   private int _score;
   private bool _gameOver;
 
-  public PlayState(ServiceProvider serviceProvider, SpriteFont font, int viewportWidth, int viewportHeight)
+  public PlayState(ServiceProvider serviceProvider, SpriteFont font, ShooterArt art, int viewportWidth, int viewportHeight)
   {
+    _art = art;
     _keyboard = serviceProvider.GetService<KeyboardManager>();
     _mouse = serviceProvider.GetService<MouseManager>();
     _timers = serviceProvider.GetService<TimerManager>();
@@ -101,6 +110,7 @@ public class PlayState : GameState
   {
     if (_keyboard.WasKeyPressed(Keys.R)) { Leaving(); StartFresh(); return; }
     float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+    UpdateBursts(dt);
     _timers.Update(gameTime);
 
     if (!_gameOver)
@@ -156,6 +166,7 @@ public class PlayState : GameState
         {
           p.Alive = false;
           e.Alive = false;
+          _bursts.Add((e.Position, BurstDuration));
           _score += 10;
           break;
         }
@@ -201,36 +212,66 @@ public class PlayState : GameState
     // World pass
     spriteBatch.Begin(transformMatrix: _camera.GetViewMatrix(), samplerState: SamplerState.PointClamp);
     DrawArena(spriteBatch);
-    foreach (Enemy e in _enemies.Live) e.Draw(spriteBatch);
-    foreach (Projectile p in _projectiles.Live) p.Draw(spriteBatch);
-    _player.Draw(spriteBatch);
+    foreach (Enemy e in _enemies.Live) e.Draw(spriteBatch, _art);
+    foreach (Projectile p in _projectiles.Live) p.Draw(spriteBatch, _art);
+    _player.Draw(spriteBatch, _art);
+    DrawBursts(spriteBatch);
     spriteBatch.End();
 
-    // Screen-space HUD
-    spriteBatch.Begin();
+    // Screen-space HUD. PointClamp because the frame behind the game-over
+    // panel is a sprite, and LinearClamp would soften its corners.
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
     DrawHud(spriteBatch);
     if (_gameOver) DrawGameOver(spriteBatch);
     spriteBatch.End();
   }
 
-  private static void DrawArena(SpriteBatch spriteBatch)
+  private void DrawArena(SpriteBatch spriteBatch)
   {
-    // Simple checker-gray background to show camera motion.
-    const int tile = 80;
-    Color a = new(30, 35, 50);
-    Color b = new(38, 44, 60);
-    for (int y = 0; y < ArenaHeight; y += tile)
-      for (int x = 0; x < ArenaWidth; x += tile)
-      {
-        Color c = (((x / tile) + (y / tile)) % 2 == 0) ? a : b;
-        Primitives.DrawRectangle(spriteBatch, new Rectangle(x, y, tile, tile), c);
-      }
-    // Arena border
-    Color border = new(90, 100, 130);
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, ArenaWidth, 4), border);
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, ArenaHeight - 4, ArenaWidth, 4), border);
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, 4, ArenaHeight), border);
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(ArenaWidth - 4, 0, 4, ArenaHeight), border);
+    // The whole 2400x1600 floor is one Tile call. It looks wasteful and is not:
+    // Tile only emits the rows and columns that intersect the destination, and
+    // the destination here is the arena, not the viewport — MonoGame culls the
+    // off-screen quads, and the alternative is a visibility calculation that
+    // would have to know about the camera.
+    PixelDraw.Tile(spriteBatch, _art.Floor,
+      new Rectangle(0, 0, ArenaWidth, ArenaHeight), ShooterArt.FloorScale);
+
+    // Hazard stripes on all four walls, inside the play area so the boundary is
+    // something the player reads rather than something they discover.
+    const int band = 16 * ShooterArt.HazardScale;
+    foreach (Rectangle edge in new[]
+    {
+      new Rectangle(0, 0, ArenaWidth, band),
+      new Rectangle(0, ArenaHeight - band, ArenaWidth, band),
+      new Rectangle(0, 0, band, ArenaHeight),
+      new Rectangle(ArenaWidth - band, 0, band, ArenaHeight),
+    })
+    {
+      PixelDraw.Tile(spriteBatch, _art.Hazard, edge, ShooterArt.HazardScale);
+    }
+  }
+
+  private void DrawBursts(SpriteBatch spriteBatch)
+  {
+    foreach ((Vector2 position, float remaining) in _bursts)
+    {
+      // Shrinks over its life, so the first frame is the biggest. A flash that
+      // holds its size and then disappears reads as a dropped frame.
+      int scale = remaining > BurstDuration * 0.6f ? 2 : 1;
+      int half = _art.Burst.Width * scale / 2;
+      PixelDraw.Sprite(spriteBatch, _art.Burst,
+        (int)position.X - half, (int)position.Y - half, scale);
+    }
+  }
+
+  private void UpdateBursts(float dt)
+  {
+    for (int i = _bursts.Count - 1; i >= 0; i--)
+    {
+      float remaining = _bursts[i].Remaining - dt;
+      if (remaining <= 0f) _bursts.RemoveAt(i);
+      else _bursts[i] = (_bursts[i].Position, remaining);
+    }
   }
 
   private void DrawHud(SpriteBatch spriteBatch)

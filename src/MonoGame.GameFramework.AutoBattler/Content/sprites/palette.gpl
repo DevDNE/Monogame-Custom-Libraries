@@ -1,0 +1,34 @@
+GIMP Palette
+Name: AutoBattler — Tabletop Skirmish
+Columns: 4
+#
+# Direction: a wargame on a felt-topped table, lit from above. The conceit is
+# that none of this is happening — they are pieces, and the player is a pair of
+# hands, which is exactly what an auto-battler asks of them.
+#
+# So the units are painted like painted miniatures: three steps, chunky, no
+# faces. ally-* and foe-* are the same three-step structure in blue and red,
+# because two armies of pieces from one set is the whole point, and any detail
+# that made one side more characterful would undercut it.
+#
+# felt-* is the board and wood-* is the shop frame around it. Keeping those two
+# materials distinct is what stops the drag-to-place from feeling like it
+# happens nowhere — you are moving a piece from the shelf onto the table.
+#
+ 26  26  26	outline
+ 30  52  42	felt-0-shadow
+ 46  80  62	felt-1
+ 68 112  86	felt-2
+ 98 148 114	felt-3-hilite
+ 64  42  28	wood-0-shadow
+104  70  44	wood-1
+148 104  66	wood-2
+198 152 104	wood-3-hilite
+ 58  70  96	ally-0-shadow
+ 92 116 160	ally-1
+136 166 214	ally-2-hilite
+104  44  52	foe-0-shadow
+158  62  66	foe-1
+212 100  92	foe-2-hilite
+230 196 108	gold
+238 232 220	bone

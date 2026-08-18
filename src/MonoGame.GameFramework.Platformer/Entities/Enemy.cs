@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MonoGame.GameFramework.Rendering;
 
 namespace MonoGame.GameFramework.Platformer.Entities;
 
@@ -32,8 +33,14 @@ public class Enemy
     Position = new Vector2(newX, Position.Y);
   }
 
-  public void Draw(SpriteBatch spriteBatch, Texture2D pixel)
+  /// <summary>
+  /// Mirrored to face the way it is walking. Legal because the sprite is lit
+  /// from directly above with no left/right bias (STYLE.md) — a flipped frame
+  /// is identical art, not a second drawing that has to be kept in sync.
+  /// </summary>
+  public void Draw(SpriteBatch spriteBatch, PlatformerArt art)
   {
-    spriteBatch.Draw(pixel, Bounds, new Color(200, 60, 60));
+    SpriteEffects facing = _direction < 0 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+    PixelDraw.Sprite(spriteBatch, art.Enemy, Bounds.X, Bounds.Y, PlatformerArt.Scale, effects: facing);
   }
 }

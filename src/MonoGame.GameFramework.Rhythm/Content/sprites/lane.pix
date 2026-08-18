@@ -1,0 +1,52 @@
+# One lane's floor, tiled down the screen. 50x32 at 2x fills the 100px lane.
+#
+# Mostly transparent, which is the whole point. An opaque lane floor covered
+# the sun completely — the board is 400px of a 640px window, dead centre, so a
+# solid lane hides exactly the thing the backdrop was drawn for.
+#
+# The knock-back is a Bayer dither of night-1 at about 40%, which is how this
+# era did translucency and the only way to do it here: alpha is binary
+# (STYLE.md), so a partially-transparent lane has to be a partially-*absent*
+# one. It darkens the grid enough for the aqua notes to hold their contrast
+# while the horizon still reads through.
+#
+# The ruler line every 8 rows is static and gives the eye something to judge a
+# falling note's speed against.
+name rhythm-lane
+size 50 32
+key L grid-dim
+key m night-3-rim
+key n night-1
+pixels
+LLmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmLL
+LL...n...n...n...n...n...n...n...n...n...n...n..LL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL.n...n...n...n...n...n...n...n...n...n...n...nLL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL...n...n...n...n...n...n...n...n...n...n...n..LL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL.n...n...n...n...n...n...n...n...n...n...n...nLL
+LLmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmLL
+LL...n...n...n...n...n...n...n...n...n...n...n..LL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL.n...n...n...n...n...n...n...n...n...n...n...nLL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL...n...n...n...n...n...n...n...n...n...n...n..LL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL.n...n...n...n...n...n...n...n...n...n...n...nLL
+LLmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmLL
+LL...n...n...n...n...n...n...n...n...n...n...n..LL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL.n...n...n...n...n...n...n...n...n...n...n...nLL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL...n...n...n...n...n...n...n...n...n...n...n..LL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL.n...n...n...n...n...n...n...n...n...n...n...nLL
+LLmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmLL
+LL...n...n...n...n...n...n...n...n...n...n...n..LL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL.n...n...n...n...n...n...n...n...n...n...n...nLL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL...n...n...n...n...n...n...n...n...n...n...n..LL
+LLn.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.LL
+LL.n...n...n...n...n...n...n...n...n...n...n...nLL

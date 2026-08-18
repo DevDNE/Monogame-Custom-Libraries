@@ -1,0 +1,44 @@
+# Deep water behind the board. Tiles both ways.
+#
+# Almost featureless by design: a match-3 board is read by colour, and the one
+# thing a background here must never do is offer the eye anywhere else to go.
+# The flecks exist only so a 800x600 field of one colour does not look like a
+# rendering failure.
+name puzzle-bg
+size 32 32
+key a deep-0-bg
+key b deep-1
+key c deep-2
+pixels
+caaaaaaaaaaaaaabaaaaaaabaaaabaaa
+aaaaaaaaaaaabaaaaabbaaaaaaaaaaaa
+cabaaaabaaacaaaaaaaaaaaaaaaaaaaa
+baaaaabaaaaaccaaabaaaaaaaaaaabaa
+baaaaaabbaaaaaaaabaaaaaaaabaaaaa
+aaaaaaabaacabaaaaaaaaaaaaaaaaaaa
+aacaaaaaabaaabaaaaaaaabbbbbabaaa
+aaaaaaaaaaaabaaaaaaaaabaaaaaaaba
+bbaaaaaaaaaaaabaaaaabaaaaaaaaaaa
+aaaaabbaaaaabaaacaabbbaaababaaab
+ababaaaaaaaababaaabaaaaaaaaaaaba
+aaabaaaaaaacaaababaaaaaaaaaacaba
+baaaaacaaaabaaaaaaaaaaaaaaaaabaa
+aaababbaaaaaabaaabaaabaaaaaabaab
+aaaaaaacaaaaaaaaaaaaaaaaaaaaaaca
+aaaaaaaaabbaabbaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaababaaaacaaaaaaaaba
+abaaaaabaaaaaaaabaaaaaabaabaacaa
+aabaaaaaaaaaaaaaaaabaaaaaaaaaaaa
+abaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaabaacaaaaaaaaaaaaaaa
+abaaaaaaaaaaaaaaaabaaaaaaaaaaaab
+baaaaaaabaaaaaaaaaaaaabaaaaaaaac
+bbaabaaaaaabaaaaaaaaaaabbaaaaaaa
+aabcaaabaaaaaaabaaaaaaaabaaaaaaa
+aacaaaaaaaaaaaabaaaaaaaaaaaaaaba
+aaaaaaaaaaaaaaaaaabaaaaabaabaaaa
+aaabaabaaaaaaaabbaaaaaaaaaaaaaab
+aaaaaaaaaacaaacaaaaaaaaaaaaaabaa
+aaaaacaaaaaabaaacaaaaaaaaaaaaaba
+aaaaaabcaabaaaaaaaaaaacaaabaaaaa
+ababacaabaabaaaaaaaaaaaaabaacaaa

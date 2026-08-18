@@ -1,0 +1,34 @@
+GIMP Palette
+Name: BattleGrid — Neon Netscape
+Columns: 4
+#
+# Direction: you are inside the network, not looking at it. Everything glows
+# from within against a violet void, and the duel reads at a glance because the
+# two combatants own opposite ends of the colour wheel — cyan is yours, magenta
+# is the intruder's, and nothing else in the game is allowed to be either.
+#
+# That is the whole design. A 3x3 grid gives the player almost no space to
+# parse, so hue does the work that layout cannot: any cyan pixel is safe, any
+# magenta pixel will hurt you, and the read survives being 3 tiles wide.
+#
+# amber-spark is the single exception and it is deliberately jarring — it only
+# ever appears on the frame a hit lands, which is the one moment the player
+# should not be reading hue at all.
+#
+ 26  26  26	outline
+ 20  16  40	void-0-deep
+ 40  30  72	void-1
+ 66  50 112	void-2
+100  84 156	void-3-rim
+  0  88 112	cyan-0-shadow
+  0 140 168	cyan-1
+ 46 196 224	cyan-2
+150 240 255	cyan-3-hilite
+104  16  76	magenta-0-shadow
+168  32 116	magenta-1
+228  72 160	magenta-2
+255 160 214	magenta-3-hilite
+ 94  98 114	chrome-1
+164 168 188	chrome-2
+228 234 248	chrome-3-hilite
+255 196  64	amber-spark

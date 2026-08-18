@@ -1,14 +1,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
+using Microsoft.Xna.Framework.Graphics;
+using MonoGame.GameFramework.BattleGrid.Components;
 using MonoGame.GameFramework.Rendering;
 
 namespace MonoGame.GameFramework.BattleGrid.Components.Entities;
 
 public class Gameboard
 {
-  private const int TileInset = 4;
-
   private readonly DrawManager _drawManager;
   public SpriteSheet[,] PlayerTiles { get; } = new SpriteSheet[3, 3];
   public SpriteSheet[,] EnemyTiles { get; } = new SpriteSheet[3, 3];
@@ -20,37 +20,40 @@ public class Gameboard
 
   public void LoadContent(ContentManager content)
   {
-    Color playerTint = new(50, 90, 170);
-    Color enemyTint = new(170, 60, 60);
+    Texture2D playerPanel = content.Load<Texture2D>(BattleArt.PlayerPanel);
+    Texture2D enemyPanel = content.Load<Texture2D>(BattleArt.EnemyPanel);
 
     for (int row = 0; row < 3; row++)
     {
       for (int col = 0; col < 3; col++)
       {
-        PlayerTiles[row, col] = MakeTile(
+        PlayerTiles[row, col] = MakeTile(playerPanel,
           BattleConfig.PlayerBoardX + col * BattleConfig.TileSize,
           BattleConfig.BoardY + row * BattleConfig.TileSize,
-          playerTint, $"playerTile_{row}_{col}");
+          $"playerTile_{row}_{col}");
         _drawManager.AddSprite(PlayerTiles[row, col]);
 
-        EnemyTiles[row, col] = MakeTile(
+        EnemyTiles[row, col] = MakeTile(enemyPanel,
           BattleConfig.EnemyBoardX + col * BattleConfig.TileSize,
           BattleConfig.BoardY + row * BattleConfig.TileSize,
-          enemyTint, $"enemyTile_{row}_{col}");
+          $"enemyTile_{row}_{col}");
         _drawManager.AddSprite(EnemyTiles[row, col]);
       }
     }
   }
 
-  private static SpriteSheet MakeTile(int x, int y, Color tint, string name)
-  {
-    SpriteSheet tile = SpriteSheet.Static(
-      Primitives.Pixel,
-      new Rectangle(x + TileInset / 2, y + TileInset / 2, BattleConfig.TileSize - TileInset, BattleConfig.TileSize - TileInset),
+  /// <summary>
+  /// Tiles butt up against each other with no gap: the 1px outline the art
+  /// carries on all four sides *is* the grid line, and two of them meeting
+  /// gives the 2px seam a board wants. The old code inset each tile by 2px to
+  /// fake that with background showing through, which cannot work once the
+  /// tiles are lit — the inset showed backdrop where a shadow belongs.
+  /// </summary>
+  private static SpriteSheet MakeTile(Texture2D texture, int x, int y, string name)
+    => SpriteSheet.Static(
+      texture,
+      new Rectangle(x, y, BattleConfig.TileSize, BattleConfig.TileSize),
       name: name);
-    tile.Tint = tint;
-    return tile;
-  }
 
   public void UnloadContent()
   {

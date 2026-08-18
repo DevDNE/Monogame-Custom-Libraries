@@ -32,9 +32,9 @@ public class Enemy
     }
   }
 
-  public void Draw(SpriteBatch spriteBatch)
+  public void Draw(SpriteBatch spriteBatch, ShooterArt art)
   {
     if (!Alive) return;
-    Primitives.DrawRectangle(spriteBatch, Bounds, new Color(220, 80, 80));
+    PixelDraw.Sprite(spriteBatch, art.Enemy, Bounds.X, Bounds.Y, ShooterArt.EntityScale);
   }
 }

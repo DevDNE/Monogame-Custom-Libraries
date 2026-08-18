@@ -1,0 +1,26 @@
+# Diagonal hazard stripes for the arena boundary. Tiles both ways.
+#
+# 45 degrees at a 4px pitch, which is the one pattern that means "do not cross"
+# without a word of text. rust-* rather than alarm-*: the wall is permanent
+# scenery, and alarm red is reserved for things that are about to hurt you.
+name shooter-hazard
+size 16 16
+key R rust-2
+key K tar-0-pit
+pixels
+RRRRKKKKRRRRKKKK
+RRRKKKKRRRRKKKKR
+RRKKKKRRRRKKKKRR
+RKKKKRRRRKKKKRRR
+KKKKRRRRKKKKRRRR
+KKKRRRRKKKKRRRRK
+KKRRRRKKKKRRRRKK
+KRRRRKKKKRRRRKKK
+RRRRKKKKRRRRKKKK
+RRRKKKKRRRRKKKKR
+RRKKKKRRRRKKKKRR
+RKKKKRRRRKKKKRRR
+KKKKRRRRKKKKRRRR
+KKKRRRRKKKKRRRRK
+KKRRRRKKKKRRRRKK
+KRRRRKKKKRRRRKKK

@@ -1,0 +1,40 @@
+GIMP Palette
+Name: Platformer — Sunset Ruins
+Columns: 6
+#
+# Direction: late afternoon on a collapsed aqueduct. Warm, low sun, long
+# shadows, green reclaiming the stonework.
+#
+# The first thirteen entries are assets/palette.gpl unchanged, and that is
+# load-bearing rather than sentimental: the hero's four frames are already
+# painted in them and committed. A per-game palette that recoloured the hero
+# would have made the move from one palette to nine look like a redesign, and
+# then nobody could tell which changes were the point.
+#
+# Everything below accent-rust is new, and all of it is scenery — the sky the
+# hero stands against, the stone he stands on, the growth in between. The cast
+# keeps its old colours; only the world it lives in got built.
+#
+ 26  26  26	outline
+ 58  36  16	warm-0-shadow
+107  68  35	warm-1
+168 122  61	warm-2-mid
+224 167 123	warm-3
+245 195 150	warm-4
+255 224 184	warm-5-hilite
+ 31  63 115	blue-0-shadow
+ 42  93 160	blue-2-mid
+ 61 126 200	blue-3
+ 90 156 224	blue-4
+111 176 232	blue-5-hilite
+122  58  42	accent-rust
+ 62  40  66	dusk-0-far
+110  58  84	dusk-1
+178  86  92	dusk-2
+238 140  96	dusk-3-glow
+ 40  56  50	moss-0-shadow
+ 70 104  74	moss-1
+116 158  94	moss-2-hilite
+ 56  58  70	stone-0-shadow
+100 100 112	stone-1
+150 148 160	stone-2-hilite

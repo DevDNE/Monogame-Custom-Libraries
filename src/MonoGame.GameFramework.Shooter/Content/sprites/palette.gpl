@@ -1,0 +1,33 @@
+GIMP Palette
+Name: Shooter — Rust Belt Arena
+Columns: 4
+#
+# Direction: a decommissioned foundry floor with the lights still on. Oil-dark
+# ground, hazard paint that has not been repainted in years, machines that were
+# never meant to be hostile.
+#
+# The arena is 2400x1600 and the camera is tight, so the player spends the whole
+# game looking at ground. That is why tar-* is four steps of nearly nothing: it
+# has to stay interesting across a screenful while never once competing with a
+# threat. Everything dangerous is warm and everything inert is not.
+#
+# alarm-* exists because rust-* had to do two jobs it could not do at once —
+# hazard stripes are decor and want to recede, an enemy about to reach you is
+# not and must not.
+#
+ 26  26  26	outline
+ 24  20  22	tar-0-pit
+ 46  40  38	tar-1
+ 74  64  58	tar-2
+108  94  84	tar-3-rim
+132  70  28	rust-1-shadow
+188 106  36	rust-2
+236 158  56	rust-3
+255 214 120	rust-4-hilite
+ 40  54  68	steel-0-shadow
+ 78  98 120	steel-1
+132 156 180	steel-2
+206 224 240	steel-3-hilite
+158  32  44	alarm-0
+220  60  60	alarm-1
+255 128 108	alarm-2-flash

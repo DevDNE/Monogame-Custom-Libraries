@@ -1,0 +1,21 @@
+# Nine-slice frame, 4px border: a painted steel bezel.
+#
+# rust-2 on the outer edge because that is the colour of every warning label in
+# this game, and a menu here should look bolted to the same machine.
+name shooter-ui-frame
+size 16 16
+key o outline
+key R rust-2
+key K tar-3-rim
+key T tar-2
+key P tar-1
+pixels
+oooooooooooooooo
+oRRRRRRRRRRRRRRo
+oRKKKKKKKKKKKKRo
+oRKTTTTTTTTTTKRo
+*8 oRKTPPPPPPPPTKRo
+oRKTTTTTTTTTTKRo
+oRKKKKKKKKKKKKRo
+oKKKKKKKKKKKKKKo
+oooooooooooooooo

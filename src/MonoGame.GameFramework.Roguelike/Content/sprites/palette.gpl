@@ -1,0 +1,37 @@
+GIMP Palette
+Name: Roguelike — Ash Catacombs
+Columns: 6
+#
+# Direction: cold stone, no daylight, one torch. The darkest palette in the
+# repo and the least colourful on purpose.
+#
+# crypt-* is six steps of blue-grey and carries almost the whole screen. Six
+# steps of near-nothing sounds like waste until you remember this game draws a
+# 60x34 tile dungeon: at that density, value *is* the level geometry — floor,
+# wall, wall-face, rubble and dark are all the same colour at different
+# brightnesses, and a hue would only get in the way.
+#
+# torch-* is the only warmth and it is rationed. Whatever is lit is either the
+# player's light or something that wants to eat them, which makes "warm" a
+# gameplay signal rather than a mood. blood-mark is smaller still — a hit
+# marker and nothing else.
+#
+# bile-* gives the monsters a hue the architecture never uses, so a moving
+# thing separates from a static thing before the player has parsed either.
+#
+ 26  26  26	outline
+ 18  20  26	crypt-0-pit
+ 32  36  46	crypt-1
+ 52  58  72	crypt-2
+ 78  86 102	crypt-3
+112 122 142	crypt-4
+160 170 190	crypt-5-hilite
+ 38  54  46	bile-0-shadow
+ 66  96  74	bile-1
+104 142 106	bile-2
+152 192 150	bile-3-hilite
+150  70  26	torch-0-shadow
+214 124  36	torch-1
+248 178  74	torch-2
+255 226 158	torch-3-flame
+132  38  46	blood-mark

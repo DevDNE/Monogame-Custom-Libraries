@@ -55,10 +55,12 @@ public class Enemy
     if (Hp <= 0) { Hp = 0; Alive = false; }
   }
 
-  public void Draw(SpriteBatch spriteBatch)
+  public void Draw(SpriteBatch spriteBatch, TowerDefenseArt art)
   {
     if (!Alive) return;
-    Primitives.DrawRectangle(spriteBatch, Bounds, new Color(230, 80, 80));
-    HpBar.Draw(spriteBatch, new Rectangle(Bounds.X, Bounds.Y - 6, Bounds.Width, 4), Hp, MaxHp, new Color(120, 220, 140));
+    PixelDraw.Sprite(spriteBatch, art.Enemy, Bounds.X, Bounds.Y, TowerDefenseArt.EntityScale);
+    // Plain HpBar, not DrawWithBorder: there can be a dozen of these on screen
+    // and a 2px border on each turns the road into a stack of frames.
+    HpBar.Draw(spriteBatch, new Rectangle(Bounds.X, Bounds.Y - 6, Bounds.Width, 4), Hp, MaxHp, new Color(124, 164, 92));
   }
 }

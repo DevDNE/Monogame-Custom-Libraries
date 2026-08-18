@@ -32,8 +32,11 @@ public class CombatState : GameState
   private Vector2 _boardOrigin;
   private bool _handlersSubscribed;
 
-  public CombatState(ServiceProvider sp, SpriteFont font, GameModel model, int vw, int vh, Action<Side?> onCombatEnded)
+  private readonly AutoBattlerArt _art;
+
+  public CombatState(ServiceProvider sp, SpriteFont font, GameModel model, AutoBattlerArt art, int vw, int vh, Action<Side?> onCombatEnded)
   {
+    _art = art;
     _events = sp.GetService<EventManager>();
     _font = font;
     _model = model;
@@ -152,8 +155,10 @@ public class CombatState : GameState
 
   public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
   {
-    spriteBatch.Begin();
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, _viewportWidth, _viewportHeight), new Color(18, 22, 34));
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+    PixelDraw.Tile(spriteBatch, _art.Felt,
+      new Rectangle(0, 0, _viewportWidth, _viewportHeight), AutoBattlerArt.FeltScale,
+      tint: new Color(150, 150, 150));
     DrawBoard(spriteBatch);
     DrawUnits(spriteBatch);
     DrawHud(spriteBatch);
@@ -167,13 +172,15 @@ public class CombatState : GameState
       for (int c = 0; c < Board.Columns; c++)
       {
         Rectangle cell = CellRect(c, r);
-        Color fill = c < Board.PlayerSideEndColExclusive ? new Color(34, 46, 72) : new Color(72, 38, 46);
-        Primitives.DrawRectangle(spriteBatch, cell, fill);
+        PixelDraw.Tile(spriteBatch, _art.Felt, cell, AutoBattlerArt.FeltScale);
       }
+
+    // The divider stays a primitive: it is a rule between two halves of the
+    // board, not an object on it, and one 2px line does not want a texture.
     int midX = (int)_boardOrigin.X + Board.PlayerSideEndColExclusive * BoardCellSize;
     Primitives.DrawRectangle(spriteBatch,
       new Rectangle(midX - 1, (int)_boardOrigin.Y, 2, Board.Rows * BoardCellSize),
-      new Color(180, 180, 200));
+      new Color(198, 152, 104));
   }
 
   private void DrawUnits(SpriteBatch spriteBatch)

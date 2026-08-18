@@ -1,0 +1,56 @@
+# One steel plate of the foundry floor. Tiles on both axes, drawn at 2x to
+# land on the arena's existing 80px grid.
+#
+# The player looks at nothing but this for the whole game, so it gets grime and
+# bolts — but at the lowest contrast in the palette. A floor with any real
+# contrast competes with the thing chasing you, and the arena is 2400x1600 of
+# it against at most a dozen enemies.
+name shooter-floor
+size 40 40
+key t tar-1
+key d tar-0-pit
+key m tar-2
+key s tar-0-pit
+key o outline
+key D tar-3-rim
+pixels
+sDssssssssssssssssssssssssssssssssssssss
+sDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+sDdttttdtttmtttttdtttttttttttttttdmttttt
+sDttttdtttttmmtttmttttttdttdtdtttttttttt
+sDtoDotmdtttttttddttdtttttmtttttttoDottt
+sDtDDDtmttmtdtttttttttttttttttttdtDDDttt
+sDmoDotttmdtddttttttttdmdmmtdtdtdtoDottt
+sDtdddttttttdttttttttddttttttddtdtmttttt
+sDttttttttttttdttdttdtdttttttttttttdtttt
+sDtttddttdttdttdmtddddtttmtddttdttttdtdt
+sDtdttttttttdtdtttmtttttttttttdttttttdtt
+sDtdtdtdtttmtttdtdttttttdtttmtmtttdmtttt
+sDttttmtttddtttdttdttdtttttttdtttdtttdtt
+sDtdtddttttttmtdtmtttmttttttdttdtttttttt
+sDtttdtmtttttttttdtttttttttdtdmttttttdtt
+sDtttttttmdttmdtttttttttttdttttttttdmtdd
+sDttttttttttttdtmttttmttttdtttmttttttdtt
+sDtttttdtttdtttddtttttdmttdtdmtttttttttt
+sDdtttdttttttttttdtdtttttttdtdttmtdtttdd
+sDtttdttdttttttttttttttttddttdttttttmtdm
+sDtdtttttttttdttmttttttttttttttttdtttmtt
+sDttttttttttttdtttdttttttttttttmtttttttm
+sDttdtttmtttttttttdtttdttttttttmtttdtttt
+sDttdttttttdttdttttdtdtdmtttdtddttmtttdm
+sDdmttddtdtttttmdtttttttmttttttdttmttttt
+sDmttttttttttttdttttttdttttdttdttttttttt
+sDttttttttdtttttttmtttdtdttdtttttttmdttm
+sDtmttmtttdttttddttttttttdtttttmttmdtttd
+sDttttttttmtttmttttttttttttdtdtttttttddt
+sDtttmttttttdtttmtdtttttttttttmtdttttttt
+sDttttdmttdtttttttdtttmdttdttttttttdttmt
+sDtmdmttdtddttttdttttttttddtmtdttdtttttt
+sDtttttttttttttddttttttttttttttdddtdtdtt
+sDtttmtdtttmtdttttttttttdttmtdtttttdtttt
+sDtoDotdttttddtttttttttttdttttttdtoDottt
+sDtDDDtttmdtttttmttttttttdmtttttttDDDttt
+sDtoDottttmmttttttttdttttdtdtttdttoDottd
+sDtdttmmtdtttttttttttttddttdtttmtmtttdmt
+sDtttttmtttttdttttttmttmttddttdtttttddtd
+sDtttddttmtdttdtttddtttdmttttttmtttttttt

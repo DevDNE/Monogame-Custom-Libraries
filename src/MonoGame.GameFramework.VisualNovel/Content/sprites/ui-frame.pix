@@ -1,0 +1,22 @@
+# Nine-slice frame, 4px border. The dialogue box and every menu panel.
+#
+# Deliberately the least interesting frame in the repo: this one has words in
+# it, and every pixel of ornament competes with the thing the player is
+# actually here to do.
+name visualnovel-ui-frame
+size 16 16
+key o outline
+key P room-3-hilite
+key p room-2
+key q room-1
+key Q room-0-shadow
+pixels
+oooooooooooooooo
+oPPPPPPPPPPPPPPo
+oPppppppppppppPo
+oPpqqqqqqqqqqpPo
+*8 oPpqQQQQQQQQqpPo
+oPpqqqqqqqqqqpPo
+oPppppppppppppPo
+oppppppppppppppo
+oooooooooooooooo

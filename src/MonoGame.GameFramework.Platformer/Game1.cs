@@ -61,10 +61,11 @@ public class Game1 : Game
     _font = Content.Load<SpriteFont>("fonts/Arial");
     _debugOverlay.SetFont(_font);
     HeroSprites heroSprites = HeroSprites.Load(Content);
+    PlatformerArt art = PlatformerArt.Load(Content);
 
-    PlayState playState = new(_serviceProvider, _font, heroSprites, ViewportWidth, ViewportHeight);
+    PlayState playState = new(_serviceProvider, _font, heroSprites, art, ViewportWidth, ViewportHeight);
     TitleState titleState = new(
-      _serviceProvider, _font, ViewportWidth, ViewportHeight,
+      _serviceProvider, _font, ViewportWidth, ViewportHeight, art, heroSprites,
       onPlay: () => _gameStateManager.ChangeState(playState),
       onQuit: Exit);
 

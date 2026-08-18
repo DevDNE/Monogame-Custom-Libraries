@@ -1,0 +1,36 @@
+GIMP Palette
+Name: VisualNovel — Twilight Study
+Columns: 5
+#
+# Direction: one room, one lamp, dusk outside the window. The quietest palette
+# here, because this is the only game where the player is reading and every
+# saturated pixel is competing with the text.
+#
+# It is also the only palette with a skin ramp, which is the reason it exists
+# separately at all: portraits are the entire visual budget of a visual novel,
+# and a face painted out of a generic warm ramp looks like a prop. Three steps
+# is enough for a bust at this size — shadow, body, and the lit edge facing the
+# lamp.
+#
+# lamp-* and night-* are the room's two light sources and they oppose each
+# other on purpose: warm from inside, cool from the window. A portrait lit by
+# both has somewhere to sit between them, which is what makes a flat bust read
+# as being *in* the room rather than pasted onto it.
+#
+ 26  26  26	outline
+ 32  28  44	room-0-shadow
+ 56  48  72	room-1
+ 86  74 106	room-2
+124 110 148	room-3-hilite
+186  88  68	lamp-0
+226 140  86	lamp-1
+248 184 104	lamp-2-glow
+ 44  70  86	night-0
+ 72 108 128	night-1
+114 154 174	night-2-hilite
+176 128 100	skin-1-shadow
+238 202 176	skin-2
+255 228 204	skin-3-hilite
+ 96  60  52	hair-0
+150  96  72	hair-1
+242 240 236	page

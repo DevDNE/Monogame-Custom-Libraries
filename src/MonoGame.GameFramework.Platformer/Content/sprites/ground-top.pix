@@ -1,0 +1,24 @@
+# The lit top course of a platform: moss over stone. Tiles horizontally only.
+#
+# This is the row the player lands on, so it is the row that gets the light and
+# the only one with a second material. Everything below is the plain ground
+# tile — spending detail on surfaces nobody walks on is how a tileset gets
+# noisy.
+name platformer-ground-top
+size 16 16
+key o outline
+key S stone-0-shadow
+key m stone-1
+key g moss-1
+key G moss-2-hilite
+pixels
+gGgGgGgGgGgGgGgG
+GGGGGGGGGGGGGGGG
+gGGGGgGGGGGGgGGG
+ooggggooogggooog
+SSSoooSSSoooSSSo
+SmmmSSSmmmmSSSmm
+*2 mmmmmmmmmmmmmmmm
+SSSSSSSSSSSSSSSS
+*6 mmmmmmmmmmSSmmmm
+SSSSSSSSSSSSSSSS

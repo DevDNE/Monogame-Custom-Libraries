@@ -1,0 +1,34 @@
+GIMP Palette
+Name: Rhythm — Vaporwave Lanes
+Columns: 4
+#
+# Direction: a chrome grid running to a synthetic horizon. Everything emits
+# light; nothing reflects it.
+#
+# A rhythm game is judged in tens of milliseconds, so the palette is built
+# around timing rather than mood. neon-aqua-* is the approach colour and
+# neon-pink-* is the strike colour, and they are near-complementary so the
+# instant a note crosses the judgement line the change is the largest one the
+# screen can make. The player reacts to that flip before reading anything.
+#
+# grid-dim and grid-lit are one pair, not a ramp: the lane floor is either on
+# the beat or it is not, and an in-between step would blur the only cue that
+# tells the player where the beat actually is.
+#
+ 26  26  26	outline
+ 16  10  32	night-0
+ 34  20  60	night-1
+ 58  32  96	night-2
+ 88  50 140	night-3-rim
+232  56 148	neon-pink-0
+255 108 186	neon-pink-1
+255 176 222	neon-pink-2-glow
+ 40 200 208	neon-aqua-0
+110 236 240	neon-aqua-1
+196 252 254	neon-aqua-2-glow
+250 176  64	sun-0
+254 214 118	sun-1
+255 244 196	sun-2-glow
+ 92  96 124	grid-dim
+148 152 184	grid-lit
+255 255 255	spark

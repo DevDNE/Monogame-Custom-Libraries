@@ -20,8 +20,11 @@ public class PlayState : GameState
   private (int c, int r)? _selected;
   private string _lastEvent = "";
 
-  public PlayState(ServiceProvider sp, SpriteFont font, int vw, int vh)
+  private readonly PuzzleArt _art;
+
+  public PlayState(ServiceProvider sp, SpriteFont font, PuzzleArt art, int vw, int vh)
   {
+    _art = art;
     _keyboard = sp.GetService<KeyboardManager>();
     _mouse = sp.GetService<MouseManager>();
     _font = font;
@@ -84,8 +87,9 @@ public class PlayState : GameState
 
   public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
   {
-    spriteBatch.Begin();
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, _viewportWidth, _viewportHeight), new Color(22, 24, 36));
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+    PixelDraw.Tile(spriteBatch, _art.Background,
+      new Rectangle(0, 0, _viewportWidth, _viewportHeight), PuzzleArt.Scale);
     DrawBoard(spriteBatch);
     DrawHud(spriteBatch);
     spriteBatch.End();
@@ -93,37 +97,40 @@ public class PlayState : GameState
 
   private void DrawBoard(SpriteBatch spriteBatch)
   {
-    // Board background
+    // A frame around the whole board, so the play area is an object rather
+    // than a region of background that happens to have gems on it.
     Rectangle bg = _board.Map.GetCellRect(0, 0);
     Rectangle last = _board.Map.GetCellRect(Board.Columns - 1, Board.Rows - 1);
-    Rectangle fullBoard = new(bg.X - 6, bg.Y - 6, last.Right - bg.X + 12, last.Bottom - bg.Y + 12);
-    Primitives.DrawRectangle(spriteBatch, fullBoard, new Color(40, 48, 66));
+    Rectangle fullBoard = new(bg.X - 16, bg.Y - 16, last.Right - bg.X + 32, last.Bottom - bg.Y + 32);
+    _art.Frame.Draw(spriteBatch, fullBoard, PuzzleArt.Scale);
 
     for (int r = 0; r < Board.Rows; r++)
     {
       for (int c = 0; c < Board.Columns; c++)
       {
         Rectangle cell = _board.Map.GetCellRect(c, r);
-        Primitives.DrawRectangle(spriteBatch, cell, new Color(30, 36, 52));
+        PixelDraw.Sprite(spriteBatch, _art.Cell, cell.X, cell.Y, PuzzleArt.Scale);
+
         Board.Gem g = _board.Gems[c, r];
         if (g == Board.Gem.Empty) continue;
-        Rectangle inset = new(
-          cell.X + Board.GemInset,
-          cell.Y + Board.GemInset,
-          cell.Width - Board.GemInset * 2,
-          cell.Height - Board.GemInset * 2);
-        Primitives.DrawRectangle(spriteBatch, inset, Board.ColorOf(g));
+        // No inset: the gem art already sits inside its own 32x32 with margin,
+        // which is what lets each gem have a different silhouette without the
+        // board having to know how big any of them are.
+        PixelDraw.Frame(spriteBatch, _art.Gems, _art.FrameFor(g), cell.X, cell.Y, PuzzleArt.Scale);
       }
     }
 
     if (_selected is { } sel)
     {
+      // The selection ring is still drawn from primitives, deliberately: it is
+      // UI over the board rather than part of it, and a 2px rectangle is
+      // exactly as legible as a sprite would be at a fraction of the cost.
       Rectangle cell = _board.Map.GetCellRect(sel.c, sel.r);
-      // Draw a 2-pixel white outline.
-      Primitives.DrawRectangle(spriteBatch, new Rectangle(cell.X, cell.Y, cell.Width, 2), Color.White);
-      Primitives.DrawRectangle(spriteBatch, new Rectangle(cell.X, cell.Bottom - 2, cell.Width, 2), Color.White);
-      Primitives.DrawRectangle(spriteBatch, new Rectangle(cell.X, cell.Y, 2, cell.Height), Color.White);
-      Primitives.DrawRectangle(spriteBatch, new Rectangle(cell.Right - 2, cell.Y, 2, cell.Height), Color.White);
+      Color ring = new(255, 255, 255);
+      Primitives.DrawRectangle(spriteBatch, new Rectangle(cell.X, cell.Y, cell.Width, 2), ring);
+      Primitives.DrawRectangle(spriteBatch, new Rectangle(cell.X, cell.Bottom - 2, cell.Width, 2), ring);
+      Primitives.DrawRectangle(spriteBatch, new Rectangle(cell.X, cell.Y, 2, cell.Height), ring);
+      Primitives.DrawRectangle(spriteBatch, new Rectangle(cell.Right - 2, cell.Y, 2, cell.Height), ring);
     }
   }
 

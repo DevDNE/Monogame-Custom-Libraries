@@ -1,0 +1,17 @@
+# Masonry fill for the body of a platform. Tiles on both axes.
+#
+# The courses are offset between the top and bottom halves so a wall two tiles
+# tall does not stack its joints into a visible column — the tell that gives a
+# tiled texture away faster than anything else.
+name platformer-ground
+size 16 16
+key o outline
+key S stone-0-shadow
+key m stone-1
+pixels
+oSSSSSSSoSSSSSSo
+*6 SmmmmmmSSmmmmmmS
+oSSSSSSoSSSSSSSo
+SSmmmmmmmmSSmmmS
+*6 mmmmmmmmmmSSmmmm
+SSSSSSSSSSSSSSSS

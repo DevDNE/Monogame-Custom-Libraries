@@ -60,9 +60,11 @@ public class Game1 : Game
     _font = Content.Load<SpriteFont>("fonts/Arial");
     _debugOverlay.SetFont(_font);
 
-    PlayState playState = new(_serviceProvider, _font, ViewportWidth, ViewportHeight);
+    RoguelikeArt art = RoguelikeArt.Load(Content);
+
+    PlayState playState = new(_serviceProvider, _font, art, ViewportWidth, ViewportHeight);
     TitleState titleState = new(
-      _serviceProvider, _font, ViewportWidth, ViewportHeight,
+      _serviceProvider, _font, ViewportWidth, ViewportHeight, art,
       onPlay: () => _gameStateManager.ChangeState(playState),
       onQuit: Exit);
     _gameStateManager.PushState(titleState);

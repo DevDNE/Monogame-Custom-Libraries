@@ -17,6 +17,7 @@ public class PlayState : GameState
   private readonly KeyboardManager _keyboardManager;
   private readonly SpriteFont _font;
   private readonly HeroSprites _heroSprites;
+  private readonly PlatformerArt _art;
   private readonly int _viewportWidth;
   private readonly int _viewportHeight;
 
@@ -27,8 +28,9 @@ public class PlayState : GameState
   private Camera2D _camera;
   private bool _won;
 
-  public PlayState(ServiceProvider serviceProvider, SpriteFont font, HeroSprites heroSprites, int viewportWidth, int viewportHeight)
+  public PlayState(ServiceProvider serviceProvider, SpriteFont font, HeroSprites heroSprites, PlatformerArt art, int viewportWidth, int viewportHeight)
   {
+    _art = art;
     _keyboardManager = serviceProvider.GetService<KeyboardManager>();
     _font = font;
     _heroSprites = heroSprites;
@@ -120,12 +122,52 @@ public class PlayState : GameState
     _camera.Update(gameTime);
   }
 
+  /// <summary>
+  /// Sky, clouds and ruins, drawn in screen space with the camera folded into a
+  /// tiling offset rather than into a transform matrix.
+  ///
+  /// That is the whole trick: a parallax layer is not the world drawn smaller,
+  /// it is a pattern scrolled at a fraction of the camera speed. Putting it
+  /// through the view matrix instead would move it at exactly camera speed and
+  /// there would be no parallax at all.
+  ///
+  /// The offsets are cast to int, so the layers step in whole pixels. A float
+  /// offset would put the pattern on a fraction of a pixel and undo everything
+  /// PointClamp is there to protect.
+  /// </summary>
+  private void DrawParallax(SpriteBatch spriteBatch)
+  {
+    Rectangle viewport = new(0, 0, _viewportWidth, _viewportHeight);
+    Vector2 camera = _camera.Position;
+
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
+    // The sky is fixed. It is 600 tall precisely so it never has to repeat
+    // vertically at this viewport, and it has no horizontal detail to scroll.
+    PixelDraw.Tile(spriteBatch, _art.Sky, viewport, PlatformerArt.Scale);
+
+    PixelDraw.Tile(spriteBatch, _art.Clouds,
+      new Rectangle(0, 60, _viewportWidth, _art.Clouds.Height), PlatformerArt.Scale,
+      offset: new Point((int)(camera.X * PlatformerArt.CloudParallax), 0));
+
+    // Anchored to the world's floor (y=540) rather than to the viewport, so the
+    // horizon stays put when the camera rises and the hero can jump above it.
+    int ruinsY = (int)(540 - camera.Y * PlatformerArt.RuinsParallax) - _art.Ruins.Height + 24;
+    PixelDraw.Tile(spriteBatch, _art.Ruins,
+      new Rectangle(0, ruinsY, _viewportWidth, _art.Ruins.Height), PlatformerArt.Scale,
+      offset: new Point((int)(camera.X * PlatformerArt.RuinsParallax), 0));
+
+    spriteBatch.End();
+  }
+
   public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
   {
+    DrawParallax(spriteBatch);
+
     spriteBatch.Begin(transformMatrix: _camera.GetViewMatrix(), samplerState: SamplerState.PointClamp);
-    foreach (Platform p in _platforms) p.Draw(spriteBatch, Primitives.Pixel);
-    foreach (Enemy e in _enemies) e.Draw(spriteBatch, Primitives.Pixel);
-    _goal.Draw(spriteBatch, Primitives.Pixel);
+    foreach (Platform p in _platforms) p.Draw(spriteBatch, _art);
+    foreach (Enemy e in _enemies) e.Draw(spriteBatch, _art);
+    _goal.Draw(spriteBatch, _art);
     // Drawn last so the sprite sits in front of the rectangle-based world.
     // Sprites and Primitives share one batch fine — they're both textures to
     // SpriteBatch — but with SpriteSortMode.Deferred (the default) the call

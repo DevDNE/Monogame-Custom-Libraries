@@ -1,0 +1,20 @@
+# One socket of the 7x7 board, drawn at 2x to fill a 64px cell.
+#
+# A recessed well rather than a raised tile: the gem sits *in* it, which is
+# what makes an empty cell during a cascade read as a hole rather than as a
+# missing sprite. Bright rim on top, dark floor — lit from above like
+# everything else.
+name puzzle-cell
+size 32 32
+key o outline
+key L deep-3-tile
+key m deep-2
+key d deep-1
+pixels
+oooooooooooooooooooooooooooooooo
+oLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLo
+*2 oLmmmmmmmmmmmmmmmmmmmmmmmmmmmmLo
+*24 oLmddddddddddddddddddddddddddmLo
+*2 oLmmmmmmmmmmmmmmmmmmmmmmmmmmmmLo
+ommmmmmmmmmmmmmmmmmmmmmmmmmmmmmo
+oooooooooooooooooooooooooooooooo

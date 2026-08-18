@@ -7,6 +7,7 @@ using MonoGame.GameFramework.Input;
 using MonoGame.GameFramework.Lifecycle;
 using MonoGame.GameFramework.Rendering;
 using MonoGame.GameFramework.Testing;
+using MonoGame.GameFramework.TowerDefense.Entities;
 using MonoGame.GameFramework.TowerDefense.GameStates;
 using MonoGame.GameFramework.UI;
 
@@ -60,9 +61,11 @@ public class Game1 : Game
     _font = Content.Load<SpriteFont>("fonts/Arial");
     _debugOverlay.SetFont(_font);
 
-    PlayState playState = new(_serviceProvider, _font, ViewportWidth, ViewportHeight);
+    TowerDefenseArt art = TowerDefenseArt.Load(Content);
+
+    PlayState playState = new(_serviceProvider, _font, art, ViewportWidth, ViewportHeight);
     TitleState titleState = new(
-      _serviceProvider, _font, ViewportWidth, ViewportHeight,
+      _serviceProvider, _font, ViewportWidth, ViewportHeight, art,
       onPlay: () => _gameStateManager.ChangeState(playState),
       onQuit: Exit);
     _gameStateManager.PushState(titleState);

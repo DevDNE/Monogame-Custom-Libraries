@@ -49,8 +49,15 @@ public class PlayState : GameState
   private float _intermissionRemaining;
   private Status _status = Status.Playing;
 
-  public PlayState(ServiceProvider sp, SpriteFont font, int vw, int vh)
+  private readonly TowerDefenseArt _art;
+
+  // Gold pickups: a world position and a countdown, drawn where an enemy died.
+  private readonly List<(Vector2 Position, float Remaining)> _coins = new();
+  private const float BountyDuration = 0.6f;
+
+  public PlayState(ServiceProvider sp, SpriteFont font, TowerDefenseArt art, int vw, int vh)
   {
+    _art = art;
     _keyboard = sp.GetService<KeyboardManager>();
     _mouse = sp.GetService<MouseManager>();
     _timers = sp.GetService<TimerManager>();
@@ -122,6 +129,7 @@ public class PlayState : GameState
     if (_status != Status.Playing) return;
 
     float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+    UpdateCoins(dt);
     _timers.Update(gameTime);
 
     HandlePlacement();
@@ -188,7 +196,12 @@ public class PlayState : GameState
   private void UpdateEnemies(float dt)
     => _enemies.UpdateAndCull(
          e => e.Update(dt, _origin),
-         onCull: e => { if (e.Leaked) _lives--; else _gold += GoldPerKill; });
+         onCull: e =>
+         {
+           if (e.Leaked) { _lives--; return; }
+           _gold += GoldPerKill;
+           _coins.Add((e.Position, BountyDuration));
+         });
 
   private void UpdateTowers(float dt)
   {
@@ -217,11 +230,12 @@ public class PlayState : GameState
 
   public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
   {
-    spriteBatch.Begin();
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
     DrawMap(spriteBatch);
-    foreach (Tower t in _towers.Values) t.Draw(spriteBatch);
-    foreach (Enemy e in _enemies.Live) e.Draw(spriteBatch);
-    foreach (Projectile p in _projectiles.Live) p.Draw(spriteBatch);
+    foreach (Tower t in _towers.Values) t.Draw(spriteBatch, _art);
+    foreach (Enemy e in _enemies.Live) e.Draw(spriteBatch, _art);
+    foreach (Projectile p in _projectiles.Live) p.Draw(spriteBatch, _art);
+    DrawCoins(spriteBatch);
     DrawHud(spriteBatch);
     if (_status != Status.Playing) DrawOutcome(spriteBatch);
     spriteBatch.End();
@@ -229,20 +243,47 @@ public class PlayState : GameState
 
   private void DrawMap(SpriteBatch spriteBatch)
   {
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, _viewportWidth, _viewportHeight), new Color(18, 22, 34));
-    Color buildable = new(46, 56, 78);
-    Color path = new(120, 100, 70);
+    // Turf beyond the board as well, so the hillside runs off the edges of the
+    // screen instead of the map floating on a flat backdrop.
+    PixelDraw.Tile(spriteBatch, _art.Turf,
+      new Rectangle(0, 0, _viewportWidth, _viewportHeight), TowerDefenseArt.CellScale);
+
     for (int r = 0; r < MapPath.Rows; r++)
     {
       for (int c = 0; c < MapPath.Columns; c++)
       {
+        // Cells butt up with no 1px gap. The old inset drew a grid by letting
+        // background show through; the tiles now differ by hue, which reads at
+        // a glance and does not put a dark line under every tower.
         Rectangle rect = new(
-          (int)_origin.X + c * MapPath.CellSize + 1,
-          (int)_origin.Y + r * MapPath.CellSize + 1,
-          MapPath.CellSize - 2, MapPath.CellSize - 2);
-        Color fill = _pathCells.Contains((c, r)) ? path : buildable;
-        Primitives.DrawRectangle(spriteBatch, rect, fill);
+          (int)_origin.X + c * MapPath.CellSize,
+          (int)_origin.Y + r * MapPath.CellSize,
+          MapPath.CellSize, MapPath.CellSize);
+        Texture2D tile = _pathCells.Contains((c, r)) ? _art.Path : _art.Turf;
+        PixelDraw.Tile(spriteBatch, tile, rect, TowerDefenseArt.CellScale);
       }
+    }
+  }
+
+  private void DrawCoins(SpriteBatch spriteBatch)
+  {
+    foreach ((Vector2 position, float remaining) in _coins)
+    {
+      // Rises as it fades — the one motion everyone reads as "you gained
+      // something" without a number attached.
+      int lift = (int)((BountyDuration - remaining) * 40f);
+      PixelDraw.Sprite(spriteBatch, _art.Coin,
+        (int)position.X - _art.Coin.Width, (int)position.Y - lift, 2);
+    }
+  }
+
+  private void UpdateCoins(float dt)
+  {
+    for (int i = _coins.Count - 1; i >= 0; i--)
+    {
+      float remaining = _coins[i].Remaining - dt;
+      if (remaining <= 0f) _coins.RemoveAt(i);
+      else _coins[i] = (_coins[i].Position, remaining);
     }
   }
 

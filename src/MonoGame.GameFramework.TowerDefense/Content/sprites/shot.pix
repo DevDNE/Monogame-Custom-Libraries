@@ -1,0 +1,15 @@
+# A tower's shot. 8x8 at 1:1, same size as its hitbox.
+#
+# Painted in the tower's own greys, not in gold: the player needs to see whose
+# it is at a glance, and there is only one thing on screen that shoots.
+name towerdefense-shot
+size 8 8
+key o outline
+key K keep-1
+key H keep-3-hilite
+pixels
+..oooo..
+.oKKKKo.
+*4 oKHHHHKo
+.oKKKKo.
+..oooo..

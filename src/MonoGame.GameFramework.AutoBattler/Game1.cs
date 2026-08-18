@@ -65,15 +65,16 @@ public class Game1 : Game
     _spriteBatch = new SpriteBatch(GraphicsDevice);
     Primitives.Initialize(GraphicsDevice);
     _font = Content.Load<SpriteFont>("fonts/Arial");
+    AutoBattlerArt art = AutoBattlerArt.Load(Content);
     _debugOverlay.SetFont(_font);
     _debugOverlay.AddWatch("round", () => _model.Round.ToString());
     _debugOverlay.AddWatch("hero hp", () => $"{_model.PlayerHeroHp} vs {_model.EnemyHeroHp}");
     _debugOverlay.AddWatch("gold", () => _model.Gold.ToString());
 
-    _shopState = new ShopState(_serviceProvider, _font, _model, ViewportWidth, ViewportHeight,
+    _shopState = new ShopState(_serviceProvider, _font, _model, art, ViewportWidth, ViewportHeight,
       onStartCombat: () => _gameStateManager.ChangeState(_combatState));
 
-    _combatState = new CombatState(_serviceProvider, _font, _model, ViewportWidth, ViewportHeight,
+    _combatState = new CombatState(_serviceProvider, _font, _model, art, ViewportWidth, ViewportHeight,
       onCombatEnded: winner =>
       {
         _postCombatState.Configure(winner);
@@ -88,7 +89,7 @@ public class Game1 : Game
         _gameStateManager.ChangeState(_titleState);
       });
 
-    _titleState = new TitleState(_serviceProvider, _font, ViewportWidth, ViewportHeight,
+    _titleState = new TitleState(_serviceProvider, _font, ViewportWidth, ViewportHeight, art,
       onPlay: () => { _model.Reset(); _gameStateManager.ChangeState(_shopState); },
       onQuit: Exit);
 

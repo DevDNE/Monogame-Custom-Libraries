@@ -8,7 +8,7 @@ namespace MonoGame.GameFramework.TowerDefense.Entities;
 public class Tower
 {
   public const int Cost = 20;
-  public const int Size = 30;
+  public const int Size = 32;  // 16x16 authored, drawn at 2x
   public const float FireCooldown = 0.8f;
   public const float Range = 140f;
 
@@ -46,11 +46,6 @@ public class Tower
     return nearest;
   }
 
-  public void Draw(SpriteBatch spriteBatch)
-  {
-    Primitives.DrawRectangle(spriteBatch, Bounds, new Color(80, 150, 240));
-    // Small gun-barrel marker
-    Rectangle barrel = new(Bounds.Center.X - 2, Bounds.Y - 4, 4, 8);
-    Primitives.DrawRectangle(spriteBatch, barrel, new Color(200, 220, 240));
-  }
+  public void Draw(SpriteBatch spriteBatch, TowerDefenseArt art)
+    => PixelDraw.Sprite(spriteBatch, art.Tower, Bounds.X, Bounds.Y, TowerDefenseArt.EntityScale);
 }

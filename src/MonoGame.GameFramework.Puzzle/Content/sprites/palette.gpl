@@ -1,0 +1,38 @@
+GIMP Palette
+Name: Puzzle — Candy Reef
+Columns: 6
+#
+# Direction: sunlit shallows. The one palette here allowed to be loud, because
+# a match-3 board is the one screen where colour is not decoration but the
+# entire mechanic.
+#
+# Six gem hues, each two steps: a body and a lighter face. Two steps rather
+# than a full ramp is the deliberate part — a 40px gem shaded across five
+# values reads as a sphere, and forty spheres read as noise. Flat body plus one
+# highlight keeps each gem a *token* you match, not an object you inspect.
+#
+# The hues are spaced roughly evenly around the wheel and separated by value as
+# well as hue, so the board still parses for the ~8% of players who cannot
+# separate the red and the green by hue alone.
+#
+# deep-* is cool and desaturated for the same reason the gems are not: the
+# board must never be the thing your eye lands on.
+#
+ 26  26  26	outline
+ 26  38  58	deep-0-bg
+ 44  64  94	deep-1
+ 70 100 138	deep-2
+116 156 196	deep-3-tile
+232  60  84	gem-red
+255 150 166	gem-red-lite
+250 148  40	gem-orange
+255 204 128	gem-orange-lite
+244 226  70	gem-yellow
+255 248 164	gem-yellow-lite
+ 66 200 104	gem-green
+158 244 178	gem-green-lite
+ 54 174 234	gem-cyan
+150 226 255	gem-cyan-lite
+166  92 232	gem-violet
+216 170 255	gem-violet-lite
+255 255 255	sparkle

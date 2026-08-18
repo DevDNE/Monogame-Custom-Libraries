@@ -1,0 +1,40 @@
+# Six 24x24 frames on one strip, drawn at 2x: warrior, archer, tank — in blue
+# for the player, then the same three in red.
+#
+# Painted like painted miniatures: three values, chunky, no faces. That is the
+# conceit of the whole game — these are pieces on a table, and the player is a
+# pair of hands. Anything that made one of them characterful would work against
+# the fact that they fight without you.
+#
+# The three classes differ by silhouette, not by decoration: a wide-shouldered
+# warrior, a narrow archer, a low slab of a tank. During combat they are 48px
+# and moving, and silhouette is all that survives that.
+name autobattler-units
+size 144 24
+key o outline
+key a ally-1
+key A ally-2-hilite
+key s ally-0-shadow
+key f foe-1
+key F foe-2-hilite
+key t foe-0-shadow
+pixels
+*6 ................................................................................................................................................
+..........oooo....................................................................oooo..........................................................
+........ooaaaaoo..........oo........oooo...........oooooooooooooooooo...........ooffffoo..........oo........oooo...........oooooooooooooooooo...
+.......oaaaaaaaao........oAAo.....ooaaaaoo........oaaaaaaaaaaaaaaaaaao.........offffffffo........oFFo.....ooffffoo........offffffffffffffffffo..
+......oaaaaaaaaaao......oAaaAo...oaaaaaaaao......oaaaaaaaaaaaaaaaaaaaao.......offffffffffo......oFffFo...offffffffo......offffffffffffffffffffo.
+......oaaAAAAAAaao......oAaaAo...oaaAAAAaao......oaaAAAAAAAAAAAAAAAAaao.......offFFFFFFffo......oFffFo...offFFFFffo......offFFFFFFFFFFFFFFFFffo.
+......oaaAAAAAAaao.......oAAo....oaaaaaaaao......oaaAAAAAAAAAAAAAAAAaao.......offFFFFFFffo.......oFFo....offffffffo......offFFFFFFFFFFFFFFFFffo.
+......oaaaaaaaaaao........oo......oaaaaaao.......oaaaaaaaaaaaaaaaaaaaao.......offffffffffo........oo......offffffo.......offffffffffffffffffffo.
+.......oaaaaaaaao.........oo.......oaaaao........oaaaaaaaaaaaaaaaaaaaao........offffffffo.........oo.......offffo........offffffffffffffffffffo.
+....oooaaaaaaaaaaooo......oo....oooaaaaaooo......oaaaaaaaaaaaaaaaaaaaao.....oooffffffffffooo......oo....ooofffffooo......offffffffffffffffffffo.
+...oaaaaaaaaaaaaaaaao.....oo...oaaaaaaaaaaao.....oaaaaaaaaaaaaaaaaaaaao....offffffffffffffffo.....oo...offfffffffffo.....offffffffffffffffffffo.
+..oaaaaaaaaaaaaaaaaaao...oAAo..oaaaaaaaaaaao.....oaaaaaaaaaaaaaaaaaaaao...offffffffffffffffffo...oFFo..offfffffffffo.....offffffffffffffffffffo.
+..oaaaaaaaaaaaaaaaaaao..oAaaAo.oaaaaaaaaaaao.....oaaaaaaaaaaaaaaaaaaaao...offffffffffffffffffo..oFffFo.offfffffffffo.....offffffffffffffffffffo.
+..oaaaaaaaaaaaaaaaaaao..oAaaAo..oaaaaaaaaao.......oaaaaaaaaaaaaaaaaaao....offffffffffffffffffo..oFffFo..offfffffffo.......offffffffffffffffffo..
+...oaaaaaaaaaaaaaaaao....oAAo...oaaaaaaaaao........oooooooooooooooooo......offffffffffffffffo....oFFo...offfffffffo........oooooooooooooooooo...
+....oaooooooooooooao......oo..oooooooooooo............oooooooooooo..........ofoooooooooooofo......oo..oooooooooooo............oooooooooooo......
+.....osssssssssssso..........osssssssssssso..........osssssssssssso..........otttttttttttto..........otttttttttttto..........otttttttttttto.....
+......oooooooooooo............oooooooooooo............oooooooooooo............oooooooooooo............oooooooooooo............oooooooooooo......
+................................................................................................................................................

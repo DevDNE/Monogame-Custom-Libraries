@@ -1,0 +1,26 @@
+# The one amber thing in the game, on the one frame it is allowed.
+#
+# amber-spark exists precisely because it does not belong to either duellist:
+# on the frame a hit lands the player should stop reading hue and just see
+# that something connected.
+name battlegrid-hit-spark
+size 16 16
+key o outline
+key a amber-spark
+key C cyan-3-hilite
+pixels
+o.....oaao.....o
+.o....oaao....o.
+..o...oaao...o..
+...o..oaao..o...
+....o.oaao.o....
+.....ooaaoo.....
+ooooooaCCaoooooo
+*2 aaaaaaCCCCaaaaaa
+ooooooaCCaoooooo
+.....ooaaoo.....
+....o.oaao.o....
+...o..oaao..o...
+..o...oaao...o..
+.o....oaao....o.
+o.....oaao.....o

@@ -1,0 +1,22 @@
+# Nine-slice frame, 4px border: carved stone.
+#
+# Bright top edge, dark bottom edge, so a frame stretched to any size still
+# reads as lit from above — the corners carry the light, and the corners are
+# the part a nine-slice never scales.
+name platformer-ui-frame
+size 16 16
+key o outline
+key M stone-2-hilite
+key S stone-1
+key m stone-0-shadow
+key s dusk-0-far
+pixels
+oooooooooooooooo
+oMMMMMMMMMMMMMMo
+oMSSSSSSSSSSSSMo
+oMSmmmmmmmmmmSMo
+*8 oMSmssssssssmSMo
+oMSmmmmmmmmmmSMo
+oMSSSSSSSSSSSSMo
+oSSSSSSSSSSSSSSo
+oooooooooooooooo

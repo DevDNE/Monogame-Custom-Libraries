@@ -1,0 +1,17 @@
+# The player's bullet. 8x8, drawn 1:1 to match its own hitbox exactly.
+#
+# rust-4 core in a rust-3 shell: the brightest thing on screen, because at this
+# size brightness is the only channel that survives.
+name shooter-shot
+size 8 8
+key o outline
+key W rust-3
+key A rust-4-hilite
+pixels
+..oooo..
+.oWWWWo.
+oWWAAWWo
+*2 oWAAAAWo
+oWWAAWWo
+.oWWWWo.
+..oooo..

@@ -1,0 +1,24 @@
+# A masonry turret, seen from above. 16x16 drawn at 2x.
+#
+# Crenellations along the top edge are the whole silhouette: from directly
+# above a tower is a square, and the notches are the only thing that says this
+# square is a building rather than a tile. Cool grey against warm ground so a
+# placed tower separates from whatever it is standing on.
+name towerdefense-tower
+size 16 16
+key o outline
+key H keep-3-hilite
+key K keep-2
+key S keep-0-shadow
+pixels
+................
+..oooooooooooo..
+..oHHoHHoHHoHo..
+*2 ..oKKKKKKKKKKo..
+..oKKKHHHHKKKo..
+*2 ..oKKHHHHHHKKo..
+..oKKKHHHHKKKo..
+*2 ..oKKKKKKKKKKo..
+*2 ..oSSSSSSSSSSo..
+..oooooooooooo..
+*2 ................

@@ -5,6 +5,8 @@ using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using MonoGame.GameFramework.Events;
 using MonoGame.GameFramework.Input;
+using Microsoft.Xna.Framework.Graphics;
+using MonoGame.GameFramework.BattleGrid.Components;
 using MonoGame.GameFramework.Rendering;
 
 namespace MonoGame.GameFramework.BattleGrid.Components.Entities;
@@ -19,6 +21,7 @@ public class Player
   public int GridRow { get; private set; } = 1;
 
   private SpriteSheet character;
+  private Texture2D _shotSheet;
   private readonly DrawManager _drawManager;
   private readonly KeyboardManager _keyboardManager;
   private readonly EventManager _eventManager;
@@ -35,12 +38,12 @@ public class Player
 
   public void LoadContent(ContentManager content)
   {
+    _shotSheet = content.Load<Texture2D>(BattleArt.Shots);
     Vector2 pos = BattleGrid.Grid.PlayerCellTopLeft(GridCol, GridRow);
     character = SpriteSheet.Static(
-      Primitives.Pixel,
+      content.Load<Texture2D>(BattleArt.Navi),
       new Rectangle((int)pos.X, (int)pos.Y, BattleConfig.DisplayWidth, BattleConfig.DisplayHeight),
       name: "Player");
-    character.Tint = new Color(80, 180, 255);
     hitbox = new Rectangle((int)pos.X, (int)pos.Y, BattleConfig.DisplayWidth, BattleConfig.DisplayHeight);
     _drawManager.AddSprite(character);
   }
@@ -105,10 +108,13 @@ public class Player
   {
     if (_keyboardManager.WasKeyReleased(Keys.Space))
     {
+      // Spawned at the navi's chest rather than its centre — that is where the
+      // buster arm is drawn, and a shot leaving from the knees reads as a bug
+      // even when the collision is identical.
       Vector2 spawn = new(
         character.Position.X + BattleConfig.DisplayWidth,
-        character.Position.Y + BattleConfig.DisplayHeight * 0.5f - 5f);
-      FireProjectile(new Projectile(_drawManager, spawn, new Vector2(10, 0), new Color(255, 230, 100)));
+        character.Position.Y + BattleConfig.DisplayHeight * 0.45f - BattleConfig.ProjectileDisplaySize * 0.5f);
+      FireProjectile(new Projectile(_drawManager, _shotSheet, BattleArt.BusterShot, spawn, new Vector2(10, 0)));
     }
     for (int i = projectiles.Count - 1; i >= 0; i--)
     {

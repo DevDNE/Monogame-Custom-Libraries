@@ -1,0 +1,25 @@
+# One cell of a 3x3 board. Drawn at 2x to fill an 80px cell.
+#
+# Lit from above per STYLE.md: the bright face is the top two rows and the
+# shadow the bottom three, with no left/right bias — which is what lets the
+# same tile shape read on both halves of the screen.
+#
+# The inset rectangle is why this is a sprite and not a filled rectangle: at 2x
+# it gives the grid a lip to catch the light, so nine of them read as a floor
+# rather than as nine flat swatches.
+name battlegrid-panel-enemy
+size 40 40
+key o outline
+key h magenta-2
+key b magenta-1
+key s magenta-0-shadow
+pixels
+oooooooooooooooooooooooooooooooooooooooo
+*2 ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhho
+obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo
+obbbssssssssssssssssssssssssssssssssbbbo
+*29 obbbsbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbsbbbo
+obbbssssssssssssssssssssssssssssssssbbbo
+obbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbo
+*3 osssssssssssssssssssssssssssssssssssssso
+oooooooooooooooooooooooooooooooooooooooo

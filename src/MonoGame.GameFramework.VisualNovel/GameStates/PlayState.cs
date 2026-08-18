@@ -28,8 +28,11 @@ public class PlayState : GameState
   private string _displayedText = "";
   private bool _atEnd;
 
-  public PlayState(ServiceProvider sp, SpriteFont font, int vw, int vh, string savePath)
+  private readonly VisualNovelArt _art;
+
+  public PlayState(ServiceProvider sp, SpriteFont font, VisualNovelArt art, int vw, int vh, string savePath)
   {
+    _art = art;
     _keyboard = sp.GetService<KeyboardManager>();
     _saves = sp.GetService<SaveSystem>();
     _font = font;
@@ -124,8 +127,8 @@ public class PlayState : GameState
 
   public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
   {
-    spriteBatch.Begin();
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, _viewportWidth, _viewportHeight), new Color(26, 22, 36));
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+    PixelDraw.Sprite(spriteBatch, _art.Room, 0, 0, VisualNovelArt.RoomScale);
 
     DrawPortrait(spriteBatch);
     DrawTextBox(spriteBatch);
@@ -136,20 +139,19 @@ public class PlayState : GameState
 
   private void DrawPortrait(SpriteBatch spriteBatch)
   {
-    // Portrait panel: left half of screen, centered vertically.
-    const int portraitSize = 260;
-    Rectangle frame = new(
-      (_viewportWidth - portraitSize) / 2,
-      80,
-      portraitSize, portraitSize);
+    // The bust stands on the floor line rather than floating in a panel, and
+    // the dialogue box overlaps its lower edge — which is what makes it read as
+    // a person in the room instead of a portrait pinned to it.
+    Rectangle? source = VisualNovelArt.RectFor(_current.Speaker);
+    if (source == null) return;
 
-    Color color = _current.Speaker switch
-    {
-      Portrait.Alex => new Color(220, 100, 110),
-      Portrait.Morgan => new Color(110, 170, 230),
-      _ => new Color(90, 95, 120),
-    };
-    Primitives.DrawRectangle(spriteBatch, frame, color);
+    int scale = VisualNovelArt.PortraitScale;
+    int width = VisualNovelArt.PortraitWidth * scale;
+    int height = VisualNovelArt.PortraitHeight * scale;
+    int x = (_viewportWidth - width) / 2;
+    int y = _viewportHeight - 260 - height + 60;
+
+    PixelDraw.Frame(spriteBatch, _art.Portraits, source.Value, x, y, scale);
 
     string speaker = _current.Speaker switch
     {
@@ -161,7 +163,7 @@ public class PlayState : GameState
     {
       Vector2 sz = _font.MeasureString(speaker);
       spriteBatch.DrawString(_font, speaker,
-        new Vector2(frame.Center.X - sz.X * 0.5f, frame.Bottom + 10), Color.White);
+        new Vector2(x + width / 2f - sz.X * 0.5f, y - 34), new Color(255, 228, 204));
     }
   }
 
@@ -169,11 +171,13 @@ public class PlayState : GameState
   {
     int boxH = 220;
     Rectangle box = new(40, _viewportHeight - boxH - 40, _viewportWidth - 80, boxH);
-    Primitives.DrawRectangle(spriteBatch, box, new Color(12, 14, 22));
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(box.X, box.Y, box.Width, 2), new Color(120, 110, 180));
+    _art.Frame.Draw(spriteBatch, box, VisualNovelArt.PortraitScale);
 
-    string wrapped = WrapText(_displayedText, _font, box.Width - 40);
-    spriteBatch.DrawString(_font, wrapped, new Vector2(box.X + 20, box.Y + 20), Color.White);
+    // Inset from the frame's own content bounds rather than from the box, so
+    // the text does not collide with the border however thick it gets.
+    Rectangle content = _art.Frame.ContentBounds(box, VisualNovelArt.PortraitScale);
+    string wrapped = WrapText(_displayedText, _font, content.Width - 24);
+    spriteBatch.DrawString(_font, wrapped, new Vector2(content.X + 12, content.Y + 8), new Color(242, 240, 236));
 
     if (_current.Choices != null && (_revealTween == null || _revealTween.IsComplete))
     {

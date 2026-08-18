@@ -78,7 +78,10 @@ public class PostCombatState : GameState
 
   public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
   {
-    spriteBatch.Begin();
+    // PointClamp even though this state currently draws only text over a
+    // scrim: the game ships textures now, and the next sprite anyone adds to
+    // this overlay would be silently blurred. check-sprites enforces it.
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
     Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, _viewportWidth, _viewportHeight), new Color(0, 0, 0, 180));
 
     string heading = _winner switch

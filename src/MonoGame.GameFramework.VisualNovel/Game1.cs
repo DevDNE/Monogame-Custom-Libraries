@@ -69,9 +69,11 @@ public class Game1 : Game
     _font = Content.Load<SpriteFont>("fonts/Arial");
     _debugOverlay.SetFont(_font);
 
-    PlayState playState = new(_serviceProvider, _font, ViewportWidth, ViewportHeight, _savePath);
+    VisualNovelArt art = VisualNovelArt.Load(Content);
+
+    PlayState playState = new(_serviceProvider, _font, art, ViewportWidth, ViewportHeight, _savePath);
     TitleState titleState = new(
-      _serviceProvider, _font, ViewportWidth, ViewportHeight, _savePath,
+      _serviceProvider, _font, ViewportWidth, ViewportHeight, _savePath, art,
       onPlay: state => { playState.ResumeFrom(state); _gameStateManager.ChangeState(playState); },
       onQuit: Exit);
     _gameStateManager.PushState(titleState);

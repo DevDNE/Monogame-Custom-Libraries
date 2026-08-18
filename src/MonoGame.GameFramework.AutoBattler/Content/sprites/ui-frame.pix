@@ -1,0 +1,22 @@
+# Nine-slice frame, 4px border: the timber shelf the shop cards sit on.
+#
+# Wood outside, felt inside. Keeping the shop's material distinct from the
+# board's is what makes drag-to-place feel like it goes somewhere — you are
+# moving a piece off the shelf and onto the table.
+name autobattler-ui-frame
+size 16 16
+key o outline
+key W wood-2
+key w wood-0-shadow
+key k felt-1
+key K felt-0-shadow
+pixels
+oooooooooooooooo
+oWWWWWWWWWWWWWWo
+oWwwwwwwwwwwwwWo
+oWwkkkkkkkkkkwWo
+*8 oWwkKKKKKKKKkwWo
+oWwkkkkkkkkkkwWo
+oWwwwwwwwwwwwwWo
+owwwwwwwwwwwwwwo
+oooooooooooooooo

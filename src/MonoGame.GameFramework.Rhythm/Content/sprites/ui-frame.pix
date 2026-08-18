@@ -1,0 +1,21 @@
+# Nine-slice frame, 4px border: a neon-pink tube around a night interior.
+#
+# Everything in this game emits light rather than reflecting it, and the menu
+# has no business being the exception.
+name rhythm-ui-frame
+size 16 16
+key o outline
+key P neon-pink-0
+key c night-3-rim
+key b night-2
+key a night-1
+pixels
+oooooooooooooooo
+oPPPPPPPPPPPPPPo
+oPccccccccccccPo
+oPcbbbbbbbbbbcPo
+*8 oPcbaaaaaaaabcPo
+oPcbbbbbbbbbbcPo
+oPccccccccccccPo
+occcccccccccccco
+oooooooooooooooo

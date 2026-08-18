@@ -52,8 +52,11 @@ public class PlayState : GameState
   private bool _clickLoaded;
   private bool _songEnded;
 
-  public PlayState(ServiceProvider sp, SpriteFont font, int vw, int vh)
+  private readonly RhythmArt _art;
+
+  public PlayState(ServiceProvider sp, SpriteFont font, RhythmArt art, int vw, int vh)
   {
+    _art = art;
     _keyboard = sp.GetService<KeyboardManager>();
     _sound = sp.GetService<SoundManager>();
     _font = font;
@@ -151,24 +154,35 @@ public class PlayState : GameState
 
   public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
   {
-    spriteBatch.Begin();
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, _viewportWidth, _viewportHeight), new Color(18, 20, 32));
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
+    // Horizon first, then the lanes over it. The lane tile is deliberately
+    // mostly transparent, so this order is what lets the sun read through the
+    // board instead of being hidden behind it.
+    PixelDraw.Sprite(spriteBatch, _art.Horizon, 0, 0, RhythmArt.Scale);
 
     int boardWidth = LaneWidth * Chart.LaneCount;
     int boardX = (_viewportWidth - boardWidth) / 2;
     int targetY = _viewportHeight - 120;
 
-    // Lane backgrounds
     for (int lane = 0; lane < Chart.LaneCount; lane++)
     {
-      Rectangle laneRect = new(boardX + lane * LaneWidth, 0, LaneWidth - 2, _viewportHeight);
-      Primitives.DrawRectangle(spriteBatch, laneRect, new Color(28, 32, 48));
+      PixelDraw.Tile(spriteBatch, _art.Lane,
+        new Rectangle(boardX + lane * LaneWidth, 0, LaneWidth, _viewportHeight), RhythmArt.Scale);
     }
 
-    // Target line
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(boardX, targetY, boardWidth, 3), new Color(210, 220, 240));
+    // Receptors: hollow frames, so a note crossing one stays fully visible at
+    // the exact moment the player is timing.
+    for (int lane = 0; lane < Chart.LaneCount; lane++)
+    {
+      PixelDraw.Sprite(spriteBatch, _art.Receptor,
+        boardX + lane * LaneWidth, targetY - _art.Receptor.Height * RhythmArt.Scale / 2,
+        RhythmArt.Scale);
+    }
 
-    // Lane flash overlay when hit
+    // Lane flash on a hit. Still a tinted rectangle rather than a sprite: it is
+    // a full-lane wash that fades over 180ms, and alpha is the whole effect —
+    // which is the one thing a binary-alpha sprite cannot do.
     for (int lane = 0; lane < Chart.LaneCount; lane++)
     {
       if (_flashRemaining[lane] <= 0f) continue;
@@ -186,11 +200,16 @@ public class PlayState : GameState
       if (delta > LeadTimeSeconds) continue;           // not spawned yet
       if (delta < -MissPastWindow) continue;           // already missed & cleared
       float y = targetY - delta * NoteSpeed;
-      Rectangle noteRect = new(
+      // Struck art inside the hit window, approach art outside it. The colour
+      // flip is near-complementary and lands on the frame the timing does, so
+      // the player reads it before they read anything else.
+      Rectangle source = System.Math.Abs(delta) <= HitWindow
+        ? RhythmArt.NoteStruck
+        : RhythmArt.NoteApproach;
+      PixelDraw.Frame(spriteBatch, _art.Notes, source,
         boardX + lane * LaneWidth + (LaneWidth - NoteWidth) / 2,
         (int)y - NoteHeight / 2,
-        NoteWidth, NoteHeight);
-      Primitives.DrawRectangle(spriteBatch, noteRect, LaneColors[lane]);
+        RhythmArt.Scale);
     }
 
     // Lane key labels below the line

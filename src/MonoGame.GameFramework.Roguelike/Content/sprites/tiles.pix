@@ -1,0 +1,39 @@
+# The dungeon tileset. Four 18x18 frames, drawn 1:1: wall, floor, stairs,
+# unlit.
+#
+# The first three are in TileKind order so the sheet indexes by the enum. The
+# fourth has no enum value — it is the same floor at the bottom of the crypt
+# ramp, drawn where the torch does not reach, and it exists because "out of
+# sight" has to be a colour rather than an absence. A black hole in a dungeon
+# reads as a bug.
+#
+# Six steps of blue-grey and no hue is the point (see the palette header): at
+# 60x34 tiles, value *is* the level geometry, and any real colour in the
+# architecture would drown the monsters.
+name roguelike-tiles
+size 72 18
+key a crypt-0-pit
+key b crypt-2
+key c crypt-3
+key d crypt-1
+key s crypt-1
+key p crypt-1
+pixels
+ccccccccccccccccccssssssssssssssssssssssssssssssssssssaaaaaaaaaaaaaaaaaa
+ccccccccccccccccccssssssssbssssbssssssssssssbssssbssssapaaaaaapaaaapaaaa
+abccbbcbbabbbcbbbcasssassbabsssabsssasssassbabsssabssspaappaapppaaappaaa
+acbdcbbbbabcddbcbbsssssbssbsssssssbbssccccccccccccccbbapaaappapaaaaaaapp
+abcbbbbbbabcbbbbbdsssssssssssssbsbbsssaaaaaaaaaaaaaabsaaaaaaaaaaaaapappa
+abbbbbbcbabcbbbbbdsssssssssssbsbssssssssccccccccccssssaaaaaaaaaaapapaaaa
+aaaaaaaaaaaaaaaaaassssssbsssbsassbssssssaaaaaaaaaasbssapppaapaaapapaapaa
+bbbcbbabbbbcbdbadcssssbsssbssbssssbsssssbsccccccssssbsaaaapaaapaapaapapa
+bbbdbbabbdcbdbcabbsssbsssbssbssssssssssbssaaaaaassssssaaapaaapaapaaaaaaa
+dbbbccabbbddbbbabbsssssssssssssassssssssssssccsssassssaaaaaaapapaaapaapa
+bbbbbbabdbcbcbbabbsssssssssbssssssssssssssssaassssssssaaaaaaaaapaaaaapaa
+bcbbbbabbbbccbbadbssasbssbasssssbsssssasbssbasssssbsssaapapaappaaaaapaaa
+aaaaaaaaaaaaaaaaaasssbassbssssssbssssssbassbssssssbsssaaappaapaaaapapaaa
+bcbacbbbbbcbabccbbsssssbssssssssbssssssssbssssssssbsssaaaaapaaaaaaaapaaa
+bbbabbbbbbbcaccbbbsasssasssssssbbssssasssasssssssbbsssapaaapaaaaaaappaaa
+bbbabbdbdbbbabbbbbssssssssssssssasssssssssssssssssasssaaaaaaaaaaaaaapaap
+bbbabbbcbbbbadcbcbbssssasbbsbsbsbsbbbssssasbbsbsbsbsbbpaaaapappapapapapp
+ccbabbcdbbbbabcccdssbbbsssssbssssssbssbbbsssssbssssssbaapppaaaaapaaaaaap

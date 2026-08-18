@@ -1,0 +1,23 @@
+# Two 50x12 note frames, drawn at 2x: approaching, then struck.
+#
+# Aqua approaching and pink on the hit, which are near-complements. That is the
+# largest change the screen can make in one frame, and in a game judged in tens
+# of milliseconds the player reacts to the flip before reading anything — see
+# the palette header.
+name rhythm-notes
+size 100 12
+key o outline
+key A neon-aqua-0
+key B neon-aqua-1
+key C neon-aqua-2-glow
+key P neon-pink-0
+key Q neon-pink-1
+key R neon-pink-2-glow
+pixels
+..oooooooooooooooooooooooooooooooooooooooooooooo....oooooooooooooooooooooooooooooooooooooooooooooo..
+.oCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCo..oRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRo.
+oCBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBCooRQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQRo
+*6 oCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACooRPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPRo
+oCBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBCooRQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQRo
+.oCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCo..oRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRo.
+..oooooooooooooooooooooooooooooooooooooooooooooo....oooooooooooooooooooooooooooooooooooooooooooooo..

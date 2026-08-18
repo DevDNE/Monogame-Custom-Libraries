@@ -29,8 +29,18 @@ public class PlayState : GameState
   private int _currentSeed;
   private bool _gameOver;
 
-  public PlayState(ServiceProvider sp, SpriteFont font, int vw, int vh)
+  private readonly RoguelikeArt _art;
+
+  // Torchlight falloff, in tiles. Tuned so a 60x34 map still shows the player
+  // roughly a room at a time — small enough that exploring means something,
+  // large enough that a monster is visible before it is adjacent.
+  private const int LitRadius = 5;
+  private const int DarkRadius = 11;
+  private static readonly Color UnlitTint = new(52, 58, 72);
+
+  public PlayState(ServiceProvider sp, SpriteFont font, RoguelikeArt art, int vw, int vh)
   {
+    _art = art;
     _keyboard = sp.GetService<KeyboardManager>();
     _font = font;
     _viewportWidth = vw;
@@ -200,8 +210,8 @@ public class PlayState : GameState
 
   public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
   {
-    spriteBatch.Begin();
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, _viewportWidth, _viewportHeight), new Color(14, 16, 24));
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+    Primitives.DrawRectangle(spriteBatch, new Rectangle(0, 0, _viewportWidth, _viewportHeight), new Color(18, 20, 26));
     DrawDungeon(spriteBatch);
     DrawActors(spriteBatch);
     DrawHud(spriteBatch);
@@ -209,28 +219,46 @@ public class PlayState : GameState
     spriteBatch.End();
   }
 
+  /// <summary>
+  /// Every tile, every frame, plus a torch-coloured falloff around the player.
+  ///
+  /// The falloff is a tint on the tile sprite rather than a second texture or a
+  /// darkening rectangle over the top. One draw call either way, and tinting
+  /// keeps the masonry visible in the dark instead of replacing it with a flat
+  /// shape — a dungeon whose walls vanish at range reads as unfinished rather
+  /// than as unlit.
+  /// </summary>
   private void DrawDungeon(SpriteBatch spriteBatch)
   {
-    Color floor = new(50, 54, 72);
-    Color wall = new(24, 28, 40);
-    Color stairs = new(230, 210, 120);
-
     for (int r = 0; r < DungeonGenerator.Rows; r++)
     {
       for (int c = 0; c < DungeonGenerator.Columns; c++)
       {
         Rectangle cell = _map.GetCellRect(c, r);
         TileKind kind = _tiles[c, r];
-        Color color = kind switch
-        {
-          TileKind.Floor => floor,
-          TileKind.Wall => wall,
-          TileKind.StairsDown => stairs,
-          _ => wall,
-        };
-        Primitives.DrawRectangle(spriteBatch, cell, color);
+        Rectangle source = RoguelikeArt.TileFrame(kind);
+        spriteBatch.Draw(_art.Tiles, cell, source, LightAt(c, r));
       }
     }
+  }
+
+  /// <summary>
+  /// Torchlight: full brightness within a few tiles of the player, falling off
+  /// to a cold near-black beyond it. Chebyshev distance rather than Euclidean,
+  /// because the movement is grid-based and a circular light over square moves
+  /// makes diagonal steps feel like they cost more.
+  /// </summary>
+  private Color LightAt(int col, int row)
+  {
+    int distance = Math.Max(Math.Abs(col - _player.Col), Math.Abs(row - _player.Row));
+    if (distance <= LitRadius) return Color.White;
+    if (distance >= DarkRadius) return UnlitTint;
+
+    float t = (distance - LitRadius) / (float)(DarkRadius - LitRadius);
+    return new Color(
+      (int)MathHelper.Lerp(255, UnlitTint.R, t),
+      (int)MathHelper.Lerp(255, UnlitTint.G, t),
+      (int)MathHelper.Lerp(255, UnlitTint.B, t));
   }
 
   private void DrawActors(SpriteBatch spriteBatch)
@@ -238,15 +266,17 @@ public class PlayState : GameState
     foreach (MonsterActor m in _monsters)
     {
       if (!m.Alive) continue;
+      // Monsters obey the same light as the floor they stand on, so one
+      // wandering out of the torch radius dims rather than disappearing.
       Rectangle cell = _map.GetCellRect(m.Col, m.Row);
-      Primitives.DrawRectangle(spriteBatch, Inset(cell, 2), m.Tint);
+      spriteBatch.Draw(_art.Actors, cell,
+        RoguelikeArt.ActorRect(RoguelikeArt.FrameForMonster(m.Name)), LightAt(m.Col, m.Row));
     }
-    Rectangle pc = _map.GetCellRect(_player.Col, _player.Row);
-    Primitives.DrawRectangle(spriteBatch, Inset(pc, 2), _player.Tint);
-  }
 
-  private static Rectangle Inset(Rectangle r, int inset)
-    => new(r.X + inset, r.Y + inset, r.Width - inset * 2, r.Height - inset * 2);
+    Rectangle pc = _map.GetCellRect(_player.Col, _player.Row);
+    spriteBatch.Draw(_art.Actors, pc,
+      RoguelikeArt.ActorRect(RoguelikeArt.ActorFrame.Hero), Color.White);
+  }
 
   private void DrawHud(SpriteBatch spriteBatch)
   {

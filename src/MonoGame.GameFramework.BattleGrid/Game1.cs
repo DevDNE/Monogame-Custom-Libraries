@@ -11,6 +11,7 @@ using MonoGame.GameFramework.Rendering;
 using MonoGame.GameFramework.Testing;
 using MonoGame.GameFramework.Text;
 using MonoGame.GameFramework.UI;
+using MonoGame.GameFramework.BattleGrid.Components;
 using MonoGame.GameFramework.BattleGrid.GameStates;
 
 namespace MonoGame.GameFramework.BattleGrid;
@@ -79,9 +80,11 @@ public class Game1 : Game
         int vw = _settingsManager.WindowWidth;
         int vh = _settingsManager.WindowHeight;
 
-        PlayState playState = new(_serviceProvider, _font, vw, vh);
+        BattleArt art = BattleArt.Load(Content);
+
+        PlayState playState = new(_serviceProvider, _font, vw, vh, art);
         TitleState titleState = new(
-            _serviceProvider, _font, vw, vh,
+            _serviceProvider, _font, vw, vh, art,
             onPlay: () => _gameStateManager.ChangeState(playState),
             onQuit: Exit);
 

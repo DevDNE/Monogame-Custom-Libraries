@@ -33,9 +33,9 @@ public class Projectile
     if (LifeRemaining <= 0f) Alive = false;
   }
 
-  public void Draw(SpriteBatch spriteBatch)
+  public void Draw(SpriteBatch spriteBatch, ShooterArt art)
   {
     if (!Alive) return;
-    Primitives.DrawRectangle(spriteBatch, Bounds, new Color(255, 230, 120));
+    PixelDraw.Sprite(spriteBatch, art.Shot, Bounds.X, Bounds.Y, ShooterArt.EntityScale);
   }
 }

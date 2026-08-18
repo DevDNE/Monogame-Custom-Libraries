@@ -1,0 +1,27 @@
+# The aqueduct on the horizon, in silhouette. Tiles horizontally.
+#
+# Silhouette only — one colour, no interior detail. A parallax layer that shows
+# its own shading competes with the foreground the player is standing on, and
+# at this distance the eye reads shape and nothing else anyway.
+#
+# The arches are 40px across and the whole strip is 160, which is the fix for
+# the version before it: small repeated arches read as a railing, not as
+# architecture a mile away. Scale is what puts something in the distance —
+# haze and detail-drop are for engines with more than one grey.
+name platformer-ruins
+size 160 64
+key s stone-0-shadow
+pixels
+*5 ................................................................................................................................................................
+*11 ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+ssssssssssssss...........sssssssssssssssssssssssssssss...........sssssssssssssssssssssssssssss...........sssssssssssssssssssssssssssss...........sssssssssssssss
+ssssssssssss...............sssssssssssssssssssssssss...............sssssssssssssssssssssssss...............sssssssssssssssssssssssss...............sssssssssssss
+sssssssssss..................ssssssssssssssssssssss..................ssssssssssssssssssssss..................ssssssssssssssssssssss..................sssssssssss
+ssssssssss....................ssssssssssssssssssss....................ssssssssssssssssssss....................ssssssssssssssssssss....................ssssssssss
+sssssssss......................ssssssssssssssssss......................ssssssssssssssssss......................ssssssssssssssssss......................sssssssss
+ssssssss........................ssssssssssssssss........................ssssssssssssssss........................ssssssssssssssss........................ssssssss
+sssssss.........................sssssssssssssss.........................sssssssssssssss.........................sssssssssssssss.........................ssssssss
+*2 ssssss...........................sssssssssssss...........................sssssssssssss...........................sssssssssssss...........................sssssss
+ssssss............................ssssssssssss............................ssssssssssss............................ssssssssssss............................ssssss
+*2 sssss.............................sssssssssss.............................sssssssssss.............................sssssssssss.............................ssssss
+*36 sssss..............................ssssssssss..............................ssssssssss..............................ssssssssss..............................sssss

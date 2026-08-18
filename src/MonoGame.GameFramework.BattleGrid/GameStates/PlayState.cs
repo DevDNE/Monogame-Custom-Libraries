@@ -11,6 +11,7 @@ using MonoGame.GameFramework.Lifecycle;
 using MonoGame.GameFramework.Rendering;
 using MonoGame.GameFramework.Text;
 using MonoGame.GameFramework.UI;
+using MonoGame.GameFramework.BattleGrid.Components;
 using MonoGame.GameFramework.BattleGrid.Components.Entities;
 using MonoGame.GameFramework.BattleGrid.Scenes;
 
@@ -41,6 +42,14 @@ public class PlayState : GameState
   private SpriteFont _font;
   private int _viewportWidth;
   private int _viewportHeight;
+  private readonly BattleArt _art;
+  private readonly Texture2D _shots;
+
+  // Hit sparks are drawn, not simulated: a position and a countdown is the
+  // whole feature, and a pooled particle system for four pixels of feedback
+  // would be the tail wagging the dog.
+  private readonly System.Collections.Generic.List<(Vector2 Position, float Remaining)> _sparks = new();
+  private const float SparkDuration = 0.18f;
 
   private BattleScene _battleScene;
   private Mode _mode = Mode.Playing;
@@ -48,8 +57,10 @@ public class PlayState : GameState
   private float _chipCooldown = 0f;
   private float _swordFlashRemaining = 0f;
 
-  public PlayState(ServiceProvider serviceProvider, SpriteFont font, int viewportWidth, int viewportHeight)
+  public PlayState(ServiceProvider serviceProvider, SpriteFont font, int viewportWidth, int viewportHeight, BattleArt art)
   {
+    _art = art;
+    _shots = art.ShotSheet;
     _serviceProvider = serviceProvider;
     _gameStateManager = serviceProvider.GetService<GameStateManager>();
     _sceneManager = serviceProvider.GetService<SceneManager>();
@@ -93,6 +104,7 @@ public class PlayState : GameState
     }
 
     float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+    UpdateSparks(dt);
     if (_chipCooldown > 0f) _chipCooldown = Math.Max(0f, _chipCooldown - dt);
     if (_swordFlashRemaining > 0f) _swordFlashRemaining = Math.Max(0f, _swordFlashRemaining - dt);
 
@@ -139,14 +151,44 @@ public class PlayState : GameState
 
   public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
   {
-    spriteBatch.Begin();
+    // PointClamp, not the default LinearClamp: every sprite below is pixel art
+    // and linear filtering blurs all of it. check-sprites enforces this.
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+    PixelDraw.Tile(spriteBatch, _art.Backdrop,
+      new Rectangle(0, 0, _viewportWidth, _viewportHeight), BattleArt.Scale);
     _drawManager.Draw(spriteBatch);
+    DrawSparks(spriteBatch);
     _textManager.Draw(spriteBatch);
     DrawHud(spriteBatch);
     if (_swordFlashRemaining > 0f) DrawSwordFlash(spriteBatch);
     if (_mode == Mode.SelectingChip) DrawChipSelection(spriteBatch);
     if (_mode == Mode.Won || _mode == Mode.Lost) DrawOutcomeOverlay(spriteBatch);
     spriteBatch.End();
+  }
+
+  private void DrawSparks(SpriteBatch spriteBatch)
+  {
+    foreach ((Vector2 position, float remaining) in _sparks)
+    {
+      // Shrinks as it fades. A spark that holds its size for 180ms and then
+      // vanishes reads as a dropped frame rather than as an impact.
+      int scale = remaining > SparkDuration * 0.5f ? BattleArt.Scale + 1 : BattleArt.Scale;
+      PixelDraw.Frame(spriteBatch, _art.HitSpark, new Rectangle(0, 0, 16, 16),
+        (int)position.X - 8 * scale, (int)position.Y - 8 * scale, scale);
+    }
+  }
+
+  private void AddSpark(Rectangle where)
+    => _sparks.Add((new Vector2(where.Center.X, where.Center.Y), SparkDuration));
+
+  private void UpdateSparks(float dt)
+  {
+    for (int i = _sparks.Count - 1; i >= 0; i--)
+    {
+      float remaining = _sparks[i].Remaining - dt;
+      if (remaining <= 0f) _sparks.RemoveAt(i);
+      else _sparks[i] = (_sparks[i].Position, remaining);
+    }
   }
 
   private void StartFreshBattle()
@@ -175,6 +217,7 @@ public class PlayState : GameState
       if (p.GetHurtbox().Intersects(enemy.GetHitbox()))
       {
         int dmg = p.GetDamageNumber();
+        AddSpark(p.GetHurtbox());
         player.RemoveProjectileOnCollision(p);
         enemy.Damage(dmg);
       }
@@ -185,6 +228,7 @@ public class PlayState : GameState
       if (p.GetHurtbox().Intersects(player.GetHitbox()))
       {
         int dmg = p.GetDamageNumber();
+        AddSpark(p.GetHurtbox());
         enemy.RemoveProjectileOnCollision(p);
         player.Damage(dmg);
       }
@@ -215,8 +259,8 @@ public class PlayState : GameState
         {
           Vector2 pos = new(
             player.GetCharacter().Position.X + BattleConfig.DisplayWidth,
-            Grid.RowCenterY(player.GridRow) - 5f);
-          Projectile shot = new(_drawManager, pos, new Vector2(16, 0), new Color(120, 220, 255), damage: 40);
+            Grid.RowCenterY(player.GridRow) - BattleConfig.ProjectileDisplaySize * 0.5f);
+          Projectile shot = new(_drawManager, _shots, BattleArt.CannonShot, pos, new Vector2(16, 0), damage: 40);
           player.FireProjectile(shot);
           break;
         }
@@ -225,8 +269,8 @@ public class PlayState : GameState
         {
           Vector2 pos = new(
             player.GetCharacter().Position.X + BattleConfig.DisplayWidth,
-            Grid.RowCenterY(row) - 5f);
-          Projectile shot = new(_drawManager, pos, new Vector2(12, 0), new Color(200, 140, 255), damage: 15);
+            Grid.RowCenterY(row) - BattleConfig.ProjectileDisplaySize * 0.5f);
+          Projectile shot = new(_drawManager, _shots, BattleArt.WideShot, pos, new Vector2(12, 0), damage: 15);
           player.FireProjectile(shot);
         }
         break;
@@ -300,8 +344,8 @@ public class PlayState : GameState
   private void DrawChipCard(SpriteBatch spriteBatch, Rectangle bounds, Chip chip, int keyNumber)
   {
     (string name, string effect, Color color) = DescribeChip(chip);
-    Primitives.DrawRectangle(spriteBatch, bounds, new Color(45, 55, 80));
-    Primitives.DrawRectangle(spriteBatch, new Rectangle(bounds.X + 8, bounds.Y + 8, bounds.Width - 16, 56), color);
+    _art.Frame.Draw(spriteBatch, bounds, BattleArt.Scale);
+    Primitives.DrawRectangle(spriteBatch, new Rectangle(bounds.X + 12, bounds.Y + 12, bounds.Width - 24, 56), color);
 
     Vector2 nameSize = _font.MeasureString(name);
     spriteBatch.DrawString(_font, name, new Vector2(bounds.Center.X - nameSize.X * 0.5f, bounds.Y + 20), Color.White);

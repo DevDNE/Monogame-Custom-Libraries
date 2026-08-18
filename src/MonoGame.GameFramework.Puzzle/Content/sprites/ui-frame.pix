@@ -1,0 +1,20 @@
+# Nine-slice frame, 4px border. Cool and desaturated on purpose — it borrows
+# the board's colours, not the gems', so nothing in the UI can be mistaken for
+# a piece.
+name puzzle-ui-frame
+size 16 16
+key o outline
+key L deep-3-tile
+key m deep-2
+key d deep-1
+key b deep-0-bg
+pixels
+oooooooooooooooo
+oLLLLLLLLLLLLLLo
+oLmmmmmmmmmmmmLo
+oLmddddddddddmLo
+*8 oLmdbbbbbbbbdmLo
+oLmddddddddddmLo
+oLmmmmmmmmmmmmLo
+ommmmmmmmmmmmmmo
+oooooooooooooooo
