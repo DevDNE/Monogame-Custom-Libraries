@@ -1,0 +1,44 @@
+GIMP Palette
+Name: MonoGame.GameFramework
+Columns: 7
+#
+# The canonical palette for every sprite in this repo. Aseprite reads and
+# writes .gpl natively (Palette menu -> Load Palette), so this file is both
+# the authoring artifact and the thing CI enforces -- there is no second copy
+# to drift from.
+#
+# Derived 2026-08-11 from the 14 colours actually in use across the Platformer
+# hero's four frames. It is deliberately the *observed* palette, not an
+# idealised one: a gate that fails on day one against committed art teaches
+# people to ignore the gate.
+#
+# Organised as ramps. Each ramp is one material, ordered dark -> light, and a
+# sprite should draw its shading from within a single ramp. Light comes from
+# the top-left (see STYLE.md), so the dark end of a ramp lives on the
+# bottom-right of a form.
+#
+# RESOLVED 2026-08-12: this palette used to carry a second blue at the same
+# ramp slot, #3A5FA0 "blue-2-mid-alt" -- 4 degrees of hue from #2A5DA0 and
+# identical in value. One pixel of each appeared in every hero frame, which is
+# the signature of a stray colour-picker nudge rather than a decision.
+#
+# #2A5DA0 won on ramp fit, not on usage (both were used exactly once per file).
+# Going up this ramp hue trends 217.1 -> 211.9 and saturation 73.0 -> 69.5;
+# #2A5DA0 sits inside both trends at H214.1/S73.8, while #3A5FA0 broke both
+# (H218.2 moved the wrong way, S63.8 fell 10 points below the slot). The stray
+# pixels were repainted by running conform-sprite against this file -- the
+# pipeline fixing its own input.
+#
+ 26  26  26	outline
+ 58  36  16	warm-0-shadow
+107  68  35	warm-1
+168 122  61	warm-2-mid
+224 167 123	warm-3
+245 195 150	warm-4
+255 224 184	warm-5-hilite
+ 31  63 115	blue-0-shadow
+ 42  93 160	blue-2-mid
+ 61 126 200	blue-3
+ 90 156 224	blue-4
+111 176 232	blue-5-hilite
+122  58  42	accent-rust

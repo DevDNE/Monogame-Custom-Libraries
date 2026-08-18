@@ -1,0 +1,59 @@
+GIMP Palette
+Name: MonoGame.GameFramework + red (car pipeline test)
+Columns: 6
+#
+# THIS IS NOT THE CANONICAL PALETTE. assets/palette.gpl is.
+#
+# This file is scoped to the car pipeline test in this directory and nothing
+# else. It is the canonical 13 colours, byte-identical and in their original
+# order, plus a 5-step red ramp that the canonical palette does not have.
+#
+# Why it exists
+# -------------
+# The canonical palette carries four ramps -- outline, warm, blue, and the
+# single accent-rust -- and no red. Conforming a red car against it measured:
+#
+#     mean delta       0.0840   (threshold 0.05 -> "regenerate, don't fix")
+#     recoloured       100%
+#     palette coverage 8/13
+#     accent-rust      214 px, 31% of the sprite
+#
+# The last line is the real problem. STYLE.md budgets accent-rust at "one
+# element, one place, under 2%"; a red car spends 31% of itself on it, and the
+# rest of the body scatters across warm-0-shadow, warm-2-mid and warm-3 -- three
+# different ramps, which breaks "shade within one ramp" outright. The output is
+# a brown car with a tan roof and blue wheels. The gate was right to reject it.
+#
+# Why the reds are these reds
+# ---------------------------
+# Hue is held at 351-5 degrees, low enough that every red stays more than 15
+# degrees from the warm ramp (26-34) and from accent-rust (12), so nothing lands
+# in an existing hue family. Values are spaced 27/43/66/85/96 to dodge
+# accent-rust's 47.8 by a wide margin. Checked with the same algorithm
+# Palette.FindRampCollisions uses: 0 collisions across all 18 colours, and the
+# tightest red pair sits 11.0 apart in value where the shipped blue-4/blue-5
+# pair sits 3.1 apart.
+#
+# Adopting this into assets/palette.gpl is a real decision, not a formality --
+# that palette is deliberately the *observed* set of colours in shipped art, and
+# no shipped sprite is red. Merge these five rows only when something red
+# actually ships.
+#
+ 26  26  26	outline
+ 58  36  16	warm-0-shadow
+107  68  35	warm-1
+168 122  61	warm-2-mid
+224 167 123	warm-3
+245 195 150	warm-4
+255 224 184	warm-5-hilite
+ 31  63 115	blue-0-shadow
+ 42  93 160	blue-2-mid
+ 61 126 200	blue-3
+ 90 156 224	blue-4
+111 176 232	blue-5-hilite
+122  58  42	accent-rust
+ 69  16  24	red-0-shadow
+110  22  32	red-1
+168  30  34	red-2-mid
+216  52  46	red-3
+244 102  90	red-4-hilite
