@@ -27,6 +27,7 @@ public class Game1 : Game
   private GameStateManager _gameStateManager;
   private DebugOverlay _debugOverlay;
   private SmokeHarness _smoke;
+  private ScreenScaler _screen;
 
   public Game1(ServiceProvider serviceProvider)
   {
@@ -56,6 +57,14 @@ public class Game1 : Game
   protected override void LoadContent()
   {
     _spriteBatch = new SpriteBatch(GraphicsDevice);
+    // The game paints at a fixed design size and the scaler puts that on the
+    // window at a whole-number scale. Routing the mouse through it is not
+    // optional: without the transform every hit-test in the game reads window
+    // pixels while the game draws in design pixels, and they stop agreeing the
+    // moment the window is resized.
+    _screen = new ScreenScaler(GraphicsDevice, ViewportWidth, ViewportHeight);
+    _screen.AttachTo(Window, _graphics);
+    _mouseManager.PositionTransform = _screen.WindowToVirtual;
     Primitives.Initialize(GraphicsDevice);
     _font = Content.Load<SpriteFont>("fonts/Arial");
     _debugOverlay.SetFont(_font);
@@ -75,6 +84,7 @@ public class Game1 : Game
     _keyboardManager.Update();
     _mouseManager.Update();
     if (_keyboardManager.IsKeyDown(Keys.Escape)) Exit();
+    if (_keyboardManager.WasKeyPressed(Keys.F11)) _screen.ToggleFullScreen(_graphics);
     _uiManager.Update(gameTime);
     _debugOverlay.Update(gameTime);
     if (!_debugOverlay.ShouldSkipUpdate) _gameStateManager.Update(gameTime);
@@ -84,9 +94,11 @@ public class Game1 : Game
 
   protected override void Draw(GameTime gameTime)
   {
+    _screen.BeginDraw();
     GraphicsDevice.Clear(new Color(22, 24, 36));
     _gameStateManager.Draw(_spriteBatch, gameTime);
     _debugOverlay.Draw(_spriteBatch, gameTime);
+    _screen.Present(_spriteBatch);
     base.Draw(gameTime);
   }
 }

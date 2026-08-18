@@ -8,7 +8,7 @@ namespace MonoGame.GameFramework.Tests.Tools;
 public class BootCheckerTests
 {
   /// <summary>
-  /// Minimal Game1.cs satisfying all four boot conventions. Individual tests
+  /// Minimal Game1.cs satisfying all five boot conventions. Individual tests
   /// strip one line at a time to prove each check fires independently.
   /// </summary>
   const string CompliantGame1 = """
@@ -23,6 +23,8 @@ public class BootCheckerTests
         _overlay = _services.GetService<DebugOverlay>();
         _overlay.SetFont(_font);
         _smoke = _services.GetService<SmokeHarness>();
+        _screen = new ScreenScaler(GraphicsDevice, 960, 640);
+        _mouse.PositionTransform = _screen.WindowToVirtual;
       }
 
       protected override void Update(GameTime gt)
@@ -30,6 +32,13 @@ public class BootCheckerTests
         _overlay.Update(gt);
         if (!_overlay.ShouldSkipUpdate) _gsm.Update(gt);
         if (_smoke.Tick()) Exit();
+      }
+
+      protected override void Draw(GameTime gt)
+      {
+        _screen.BeginDraw();
+        _gsm.Draw(_spriteBatch, gt);
+        _screen.Present(_spriteBatch);
       }
     }
     """;
@@ -140,5 +149,46 @@ public class BootCheckerTests
     var result = BootChecker.Check(WriteGame1(src));
     result.Missing.Should().ContainSingle()
       .Which.Description.Should().Contain("SmokeHarness not referenced");
+  }
+
+  // ---- Convention 5: the scaler ---------------------------------------------
+
+  [Fact]
+  public void MissingScreenScaler_IsReported()
+  {
+    string src = CompliantGame1
+      .Replace("_screen = new ScreenScaler(GraphicsDevice, 960, 640);", "")
+      .Replace("_mouse.PositionTransform = _screen.WindowToVirtual;", "")
+      .Replace("_screen.BeginDraw();", "")
+      .Replace("_screen.Present(_spriteBatch);", "");
+
+    var result = BootChecker.Check(WriteGame1(src));
+    result.Missing.Should().ContainSingle(m => m.Description.Contains("ScreenScaler not referenced"));
+  }
+
+  [Fact]
+  public void ScalerWithoutBeginDraw_IsReported()
+  {
+    string src = CompliantGame1.Replace("_screen.BeginDraw();", "");
+    var result = BootChecker.Check(WriteGame1(src));
+    result.Missing.Should().ContainSingle(m => m.Description.Contains("BeginDraw() never called"));
+  }
+
+  [Fact]
+  public void ScalerWithoutPresent_IsReported()
+  {
+    string src = CompliantGame1.Replace("_screen.Present(_spriteBatch);", "");
+    var result = BootChecker.Check(WriteGame1(src));
+    result.Missing.Should().ContainSingle(m => m.Description.Contains("Present(...) never called"));
+  }
+
+  [Fact]
+  public void ScalerWithoutTheMouseTransform_IsReported()
+  {
+    // The failure this gate is really for: everything renders correctly and
+    // every click is wrong the moment the window stops being its design size.
+    string src = CompliantGame1.Replace("_mouse.PositionTransform = _screen.WindowToVirtual;", "");
+    var result = BootChecker.Check(WriteGame1(src));
+    result.Missing.Should().ContainSingle(m => m.Description.Contains("PositionTransform not set"));
   }
 }

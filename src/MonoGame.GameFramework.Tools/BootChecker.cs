@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace MonoGame.GameFramework.Tools;
 
 /// <summary>
-/// Scans a sample's Game1.cs for four boot conventions documented in
+/// Scans a sample's Game1.cs for five boot conventions documented in
 /// CLAUDE.md (see "Debug overlay" and "Smoke harness" sections):
 ///   1. LoadContent calls Primitives.Initialize(GraphicsDevice) — required
 ///      for DrawRectangle / Pixel to work anywhere downstream.
@@ -13,6 +13,11 @@ namespace MonoGame.GameFramework.Tools;
 ///      so pause/step works.
 ///   4. SmokeHarness.Tick() called and Exit() invoked when it returns true
 ///      so --exit-after N headless smoke-tests actually exit.
+///   5. ScreenScaler built, drawn through (BeginDraw + Present) and wired to
+///      MouseManager.PositionTransform. The last one is the reason this is a
+///      gate rather than a note: a sample that builds a scaler and forgets the
+///      mouse transform looks perfectly correct until the window is resized,
+///      and then every click in the game lands somewhere else.
 ///
 /// These aren't safety-critical checks — they enforce the thinnest
 /// convention in the project. Easy to forget in a hand-written 10th
@@ -35,6 +40,10 @@ public static class BootChecker
   static readonly Regex SmokeHarnessRef = new(@"\bSmokeHarness\b", RegexOptions.Compiled);
   static readonly Regex TickCall = new(@"\b\w+\.Tick\s*\(\s*\)", RegexOptions.Compiled);
   static readonly Regex ExitCall = new(@"\bExit\s*\(\s*\)", RegexOptions.Compiled);
+  static readonly Regex ScreenScalerRef = new(@"\bScreenScaler\b", RegexOptions.Compiled);
+  static readonly Regex ScalerBeginDraw = new(@"\b\w+\.BeginDraw\s*\(\s*\)", RegexOptions.Compiled);
+  static readonly Regex ScalerPresent = new(@"\b\w+\.Present\s*\(", RegexOptions.Compiled);
+  static readonly Regex MousePositionTransform = new(@"\.PositionTransform\s*=", RegexOptions.Compiled);
 
   public static CheckResult Check(string projectDir)
   {
@@ -74,6 +83,20 @@ public static class BootChecker
         missing.Add(new MissingConvention("SmokeHarness referenced but .Tick() never called — --exit-after won't work."));
       if (!ExitCall.IsMatch(src))
         missing.Add(new MissingConvention("Exit() call missing — SmokeHarness.Tick() returning true must trigger Game.Exit()."));
+    }
+
+    if (!ScreenScalerRef.IsMatch(src))
+    {
+      missing.Add(new MissingConvention("ScreenScaler not referenced — the game would be presented at whatever scale the window happens to be."));
+    }
+    else
+    {
+      if (!ScalerBeginDraw.IsMatch(src))
+        missing.Add(new MissingConvention("ScreenScaler referenced but BeginDraw() never called — the frame is not being drawn into the design surface."));
+      if (!ScalerPresent.IsMatch(src))
+        missing.Add(new MissingConvention("ScreenScaler referenced but Present(...) never called — the design surface never reaches the window."));
+      if (!MousePositionTransform.IsMatch(src))
+        missing.Add(new MissingConvention("MouseManager.PositionTransform not set — mouse coordinates stay in window pixels while the game draws in design pixels."));
     }
 
     return new CheckResult(game1, missing);
