@@ -110,7 +110,7 @@
 /processorParam:TextureFormat=Color
 /build:sprites/hero-f2-idle-blink.png
 
-#begin sprites/hero-f3-walk-left.png
+#begin sprites/hero-walk.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -120,19 +120,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:sprites/hero-f3-walk-left.png
-
-#begin sprites/hero-f4-walk-right.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=False
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:sprites/hero-f4-walk-right.png
+/build:sprites/hero-walk.png
 
 #begin sprites/ruins.png
 /importer:TextureImporter

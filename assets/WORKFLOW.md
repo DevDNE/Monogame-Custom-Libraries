@@ -88,13 +88,64 @@ So use it as the concept stage:
 
 Then either:
 
-- **Trace it.** Open the render as a reference layer in Aseprite at 32x32 and
-  draw over it. Highest quality, and at this size it is genuinely fast.
-- **Conform it** (Step 1) and treat the output as a rough block-in to repaint.
+- **Trace it**, which is now a command rather than an afternoon: `conform-sprite`
+  onto the target palette, then `trace-pix` into a `.pix` grid you can polish in
+  a format that diffs. (This paragraph used to say "open it as a reference layer
+  in Aseprite and draw over it"; that was written before either tool existed.)
+- **Mine it for poses** and author the frames yourself. At 32x32 this is often
+  the faster of the two — see the calibration below, and Expectation setting.
 
 Ask for a **flat background and chunky shapes**. The more detail it puts in,
 the less survives a 32x reduction. Do not ask it for "pixel art" — you will get
 a picture *of* pixel art, with a fake grid that does not align to anything.
+
+### Calibration: a walk-cycle contact sheet, 2026-08-18
+
+Asked for a 48-cell "sprite sheet" of a character walking in four directions,
+to pose the Platformer hero's walk. `describe-image` on the render, first:
+
+```
+  file              1024x559
+  native grid       1024x559  (already 1:1)      <- no integer upscale found
+  distinct colours  105,888
+  transparent       0
+```
+
+**That is the whole verdict, in one command, before opening the file.** A real
+sprite sheet is an integer upscale of a small grid; the block detector found
+none, so the "pixels" are not on a grid at all. It is a picture *of* a sprite
+sheet — the failure mode two paragraphs up, arriving exactly as described.
+
+Slicing it confirmed the same thing at every level. The cell pitch is 78-80px
+wide and the four rows are 99/99/101/107 tall — **a rendered illustration, not
+a grid**, so no mechanical slicer can be right. Keying the panel background and
+taking the largest connected component gives a ~53x91 character. Conformed:
+
+| target | palette | mean delta | verdict |
+|---|---|---|---|
+| 32x32 | Platformer *Sunset Ruins* | 0.0558 | over the line, + non-uniform scale |
+| 28x48 (aspect-correct) | Platformer *Sunset Ruins* | 0.0553 | **so it is not the scale** |
+| 28x48 | measured from the sheet itself | 0.0066 | the tautology, see below |
+
+Three things worth keeping:
+
+**Fixing the aspect changed nothing** — 0.0558 to 0.0553. The `non-uniform
+scale` warning was real and irrelevant; the distance was the palette all along.
+Worth running both, because the two warnings look equally serious and only one
+of them was the problem.
+
+**`extract-palette` found 2,649 colours in one 53x91 cell**, and conforming to
+*that* scores 0.0066. Which proves nothing: art and palette measured from the
+same file always agree. It is the corsair README's finding restated — every
+gate checks legality, not fidelity — and it is why the number that counts is
+the one against the palette the sprite has to live in.
+
+**The poses shipped; not one pixel did.** The sheet settled the questions a
+blank grid can't answer — stride width, how far the hips rise at passing, that
+a side-view walk's two contact poses share a silhouette and separate only by
+which leg carries the light ramp. Then `hero-walk.pix` was authored by hand.
+That is Track A working exactly as advertised: **it is a concept tool, and 0.055
+is it telling you so.**
 
 ## Track B — Retro Diffusion
 

@@ -873,3 +873,87 @@ Worth recording because neither was caught by writing the tool and both were cau
 2. **`compare-sprite` measures silhouette and colour, not structure.** Two sprites can score identically with the eyes in different places. Per-region deltas would catch it; nothing here does.
 3. **Light direction, ramp discipline and proportion remain judgment calls.** §9's split still holds — palette and alpha are mechanical, "lit from the wrong side" is not, and now neither is "the nose is lit from the lower-right", which the recreated reference does in contradiction of STYLE.md's own top-left rule.
 4. **The offset sweep was done by hand.** Three shell iterations over `compare-sprite`. If that pattern recurs it belongs in the tool as an `--align` flag, not in a loop someone retypes.
+
+## §13 — The samples cannot be driven, only launched (NEW 2026-08-18)
+
+Adding the hero's walk cycle produced a gap the repo has never had to name:
+**every gate here can prove a sprite is legal, and nothing can prove the game
+plays.** `check-anim-all` confirms the strip has no dead frames and a clean
+loop seam. `check-boot-all` confirms the five boot conventions are wired.
+`SmokeHarness` confirms N frames render without throwing. None of them presses
+a key, and a walk cycle only exists once something does.
+
+That gap was crossed by hand this session, badly, and the details are worth
+keeping because most of them are counter-intuitive.
+
+### 13.1 The GUI-session warning is narrower than CLAUDE.md claims
+
+CLAUDE.md says the smoke harness "requires a GUI session… not from an
+agent/background shell", on the evidence of nine samples timing out at `rc=142`
+with zero-byte logs. **Measured 2026-08-18 from exactly such a shell:**
+
+```
+  120 frames: rc=0,  4.3s wall  ->  57 fps net of ~2.2s startup
+  600 frames: rc=0, 12.2s wall  ->  60 fps net of ~2.2s startup
+```
+
+Sustained 60 fps is real vsync against a real compositor, and the window opens
+and draws. So the rule is not "an agent shell cannot run these" — it is **"a
+shell with no reachable window server cannot"**, which is what SSH and a
+headless runner have in common and what a local agent shell on a logged-in Mac
+does not. Keep the warning; the `rc=142` + zero-byte-log signature is still the
+tell. Just check whether a window server is reachable before concluding the
+games are broken.
+
+### 13.2 Launching is not running, and the difference hid for four attempts
+
+A launched sample sits on its title screen forever. Getting past it needs a
+keypress, and the obvious tool is wrong:
+
+- **`osascript` `key down "a"` silently does nothing.** System Events' `key
+  down`/`key up` are reliable for *modifiers* only. It returns success, writes
+  no error, and the game never sees the key. `key code 36` (a tap) does work,
+  which is what made this so slow to spot — Return started the game, so input
+  looked wired up, and only the *hold* was inert.
+- **A hold needs `CGEventCreateKeyboardEvent`** posted to `.cghidEventTap`,
+  from a compiled helper (`swiftc` is present; there is no `cliclick`, and
+  pyobjc is not installed). ~20 lines.
+- **The failure was invisible to the eye.** Six screenshots of a hero standing
+  idle read as "walking" for two rounds, because a 32x32 sprite mid-stride and
+  one standing still are genuinely hard to tell apart in a screenshot of a
+  1024x576 window on a 5K display. What settled it was matching the on-screen
+  pixels back against the source frames: crop the hero, downsample by the
+  device scale, and score against all 4 strip frames x 2 facings plus the
+  idles. Every sampled frame came back `idle-R`. **A screenshot is evidence of
+  rendering; only a match against the source is evidence of *which frame*.**
+
+### 13.3 Sampling a cycle is its own trap
+
+The first capture ran `screencapture` at 0.3s intervals. One walk cycle is
+`22px x 4 frames / 280 px/s` = **0.314s**. Every sample landed on nearly the
+same phase, so the strip looked frozen — a textbook aliasing artefact that
+reads exactly like a bug in the animation. Anything that samples an animation
+has to know the cycle period, or record video and decimate afterwards.
+`screencapture -v -V<secs>` plus `ffmpeg` works and gives 120fps to decimate
+from.
+
+### 13.4 What a rig would have to do
+
+Not built. The shape, if it is:
+
+1. **Post real key events** to the focused window (the Swift/CGEvent helper) —
+   or better, accept scripted input at the game side so no OS-level injection
+   is needed at all. A `--script` flag consumed by `KeyboardManager` would make
+   the whole of 13.2 moot and would work headless.
+2. **Capture deterministically.** `SmokeHarness` already counts frames; a
+   `--capture-frame N` that dumps the render target to PNG would beat
+   screen-scraping outright — no window server, no device scale, no desktop
+   wallpaper in the crop, no aliasing.
+3. **Assert against source art**, per 13.2. The matcher is ~30 lines and is the
+   only part that actually proved anything.
+4. **Know the cycle period** before sampling, per 13.3.
+
+Item 2 is the one worth doing first: it removes the dependency on a window
+server, which is the thing that makes this untestable in CI, and it turns
+"does the walk cycle play?" into a diff against committed PNGs — the same
+shape as `check-pix-all`, which is already the most load-bearing gate here.

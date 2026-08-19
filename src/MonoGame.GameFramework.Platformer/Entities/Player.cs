@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MonoGame.GameFramework.Rendering;
 
 namespace MonoGame.GameFramework.Platformer.Entities;
 
@@ -31,6 +32,20 @@ public class Player
   private const float BlinkInterval = 3.2f;
   private const float BlinkDuration = 0.14f;
 
+  /// <summary>
+  /// World pixels of ground covered per walk frame.
+  ///
+  /// The cycle advances on distance travelled, not on a timer, so it stays
+  /// locked to the hero rather than skating: pushing into a wall stops the
+  /// legs, and the acceleration ramp winds them up instead of snapping to full
+  /// speed. At MoveSpeed that works out near 13 frames a second, and it slows
+  /// on its own through the deceleration slide.
+  /// </summary>
+  private const float WalkPixelsPerFrame = 22f;
+
+  /// <summary>Ground covered by one full contact-passing-contact-passing loop.</summary>
+  private const float WalkCyclePixels = WalkPixelsPerFrame * HeroSprites.WalkFrameCount;
+
   public Vector2 Position { get; set; }
   public Vector2 Velocity { get; set; }
   public bool IsGrounded { get; private set; }
@@ -53,6 +68,7 @@ public class Player
   private float _coyoteTimer;
   private float _jumpBufferTimer;
   private float _blinkTimer;
+  private float _walkDistance;
   private int _facing = 1;
 
   public Player(Vector2 spawnPosition)
@@ -69,6 +85,7 @@ public class Player
     _coyoteTimer = 0f;
     _jumpBufferTimer = 0f;
     _blinkTimer = 0f;
+    _walkDistance = 0f;
     _facing = 1;
   }
 
@@ -112,8 +129,18 @@ public class Player
 
     Velocity = new Vector2(newVx, newVy);
 
+    float startX = Position.X;
     MoveX(Velocity.X * dt, platforms);
     MoveY(Velocity.Y * dt, platforms);
+
+    // Measured after the move, so a hero pinned against a wall stops stepping
+    // even though Velocity.X is still non-zero going into MoveX. Kept modulo a
+    // whole cycle so a long walk can't drift the float into a range where the
+    // division loses the frame.
+    if (MathF.Abs(Velocity.X) > MovingThreshold)
+      _walkDistance = (_walkDistance + MathF.Abs(Position.X - startX)) % WalkCyclePixels;
+    else
+      _walkDistance = 0f;
 
     if (_jumpBufferTimer > 0f && IsGrounded)
     {
@@ -178,14 +205,31 @@ public class Player
   {
     get
     {
-      if (MathF.Abs(Velocity.X) > MovingThreshold)
-        return _facing < 0 ? HeroFrame.WalkLeft : HeroFrame.WalkRight;
+      if (MathF.Abs(Velocity.X) > MovingThreshold) return HeroFrame.Walk;
       return _blinkTimer >= BlinkInterval ? HeroFrame.IdleBlink : HeroFrame.IdleOpen;
     }
   }
 
+  /// <summary>
+  /// Which frame of the walk strip is showing. Zero whenever the hero is still,
+  /// so a step always begins on a contact pose rather than wherever the last
+  /// one happened to stop.
+  /// </summary>
+  public int WalkPhase => (int)(_walkDistance / WalkPixelsPerFrame);
+
+  /// <summary>Horizontal facing: 1 right, -1 left. The art is authored facing right.</summary>
+  public int Facing => _facing;
+
   public void Draw(SpriteBatch spriteBatch, HeroSprites sprites)
   {
-    spriteBatch.Draw(sprites[CurrentFrame], SpriteDestination, Color.White);
+    HeroFrame frame = CurrentFrame;
+    PixelDraw.Frame(
+      spriteBatch,
+      sprites[frame],
+      HeroSprites.Source(frame, WalkPhase),
+      SpriteDestination.X,
+      SpriteDestination.Y,
+      scale: 1,
+      effects: _facing < 0 ? SpriteEffects.FlipHorizontally : SpriteEffects.None);
   }
 }
