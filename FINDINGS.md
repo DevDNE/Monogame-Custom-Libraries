@@ -905,6 +905,45 @@ does not. Keep the warning; the `rc=142` + zero-byte-log signature is still the
 tell. Just check whether a window server is reachable before concluding the
 games are broken.
 
+**A reachable window server is not sufficient — the display must also be
+awake.** Measured 2026-09-07, scaffolding the tenth sample: every run came back
+`rc=142` with a zero-byte log, on a Mac that was logged in at the console, in an
+`Aqua` session, with `WindowServer` running, from a local (non-SSH) shell. Every
+condition §13.1 names was satisfied and the games still hung, so the entry above
+sent the diagnosis the wrong way.
+
+`sample` on the hung process settled it in one call — 1538 of 1538 slices in the
+same three frames:
+
+```
+  Cocoa_GL_SwapWindow  (libSDL2)
+    SDL_CondWait_REAL  (libSDL2)
+      __psynch_cvwait  (libsystem_kernel)
+```
+
+The window is created and init and content-load both complete; the *first*
+`SwapWindow` never returns. The cause was one line of `system_profiler
+SPDisplaysDataType`:
+
+```
+  Display Asleep: Yes
+```
+
+With the display asleep macOS stops delivering the vsync the swap is waiting on,
+and SDL blocks forever. `caffeinate -u -t 90` asserts user activity, wakes the
+display, and the identical command then returns **`rc=0` in 3s** — 120 frames
+plus ~1s of startup. `scripts/smoke-all.sh` went from a full sweep of timeouts to
+all 10 samples green without a line of code changing.
+
+Two things worth keeping. **The signature is identical for both causes** — same
+`rc=142`, same zero-byte log — so the signature tells you the game never got a
+frame out, and nothing more; it does not tell you why. And **the second cause is
+far likelier than the first** for anyone running this repo, because a developer's
+own Mac puts its display to sleep several times a day and never once loses its
+window server. Check `Display Asleep` before `WindowServer`, and reach for
+`sample` before either — it names the blocking frame directly instead of
+inferring it.
+
 ### 13.2 Launching is not running, and the difference hid for four attempts
 
 A launched sample sits on its title screen forever. Getting past it needs a
