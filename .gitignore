@@ -13,3 +13,19 @@ Icon.ico
 Thumbs.db
 .DS_Store
 .env
+
+# Concept art — generator output, not content.
+#
+# The repo is ~3 MB of history and 532 KB of committed PNGs, because shipped
+# art is .pix text plus ~350-byte exports. Concept sheets are 1K-4K renders at
+# hundreds of KB each, several candidates per accepted sheet, and the Knock It
+# Off prompt book alone calls for 226 of them. Committing those would be a
+# permanent two-orders-of-magnitude increase in clone size for files that are
+# reproducible from the prompts beside them.
+#
+# The prompts (.md) ARE committed. The output is not.
+assets/concept/**/*.png
+assets/concept/**/*.jpg
+assets/concept/**/*.jpeg
+assets/concept/**/*.webp
+assets/concept/**/*.gif
