@@ -1,0 +1,68 @@
+
+#----------------------------- Global Properties ----------------------------#
+
+/outputDir:bin/$(Platform)
+/intermediateDir:obj/$(Platform)
+/platform:DesktopGL
+/config:
+/profile:Reach
+/compress:False
+
+#-------------------------------- References --------------------------------#
+
+
+#---------------------------------- Content ---------------------------------#
+
+#begin fonts/Arial.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:fonts/Arial.spritefont
+
+# ---------------------------------------------------------------------------
+# Sprite path. Copy this block for each new texture; replace the filename in
+# both the #begin line and the /build line.
+#
+# TextureFormat=Color is deliberate and load-bearing. The font above uses
+# Compressed (DXT block compression), which is fine for glyph atlases but
+# mangles the hard 1px colour boundaries pixel art depends on. Never use
+# Compressed for sprites.
+#
+# ResizeToPowerOfTwo/MakeSquare stay False so a 32x32 source stays 32x32 —
+# padding would silently shift every source rectangle you compute.
+#
+# Pair this with SamplerState.PointClamp in SpriteBatch.Begin (see
+# GameStates/PlayState.cs). Without it the default LinearClamp filter blurs
+# pixel art the moment it's scaled.
+# ---------------------------------------------------------------------------
+
+# Pixel-art sprites. TextureFormat MUST stay Color — the Compressed (DXT)
+# setting used for the font above is block-compression, which mangles hard
+# 1px colour boundaries and leaves visible artefacts on small art.
+# ResizeToPowerOfTwo/MakeSquare stay False so a 32x32 source stays 32x32;
+# padding would shift every source rectangle. check-sprites enforces all three.
+
+#begin sprites/placeholder.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:sprites/placeholder.png
+
+#begin sprites/ui-frame.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:sprites/ui-frame.png

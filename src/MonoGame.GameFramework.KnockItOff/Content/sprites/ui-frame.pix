@@ -1,0 +1,25 @@
+# A nine-slice frame: 16x16 with a 4px border. Every button and panel in the
+# scaffolded game comes out of this one file at whatever size the layout wants.
+#
+# Corners never scale, edges repeat along one axis, the middle repeats along
+# both — which is why the light lives on the top edge and the shadow on the
+# bottom. Stretch it to any size and it still reads as lit from above.
+#
+# Wire it up in TitleState by overriding ButtonFrame; see any sample.
+name KnockItOff-ui-frame
+size 16 16
+key o outline
+key H slate-3-hilite
+key M slate-2
+key D slate-1
+key d slate-0-shadow
+pixels
+oooooooooooooooo
+oHHHHHHHHHHHHHHo
+oHMMMMMMMMMMMMHo
+oHMDDDDDDDDDDMHo
+*8 oHMDddddddddDMHo
+oHMDDDDDDDDDDMHo
+oHMMMMMMMMMMMMHo
+oMMMMMMMMMMMMMMo
+oooooooooooooooo

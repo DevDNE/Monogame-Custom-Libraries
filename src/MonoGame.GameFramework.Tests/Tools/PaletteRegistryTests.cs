@@ -68,7 +68,11 @@ public class PaletteRegistryTests
       .Where(n => n != "MonoGame.GameFramework" && !n.EndsWith(".Tests") && !n.EndsWith(".Tools"))
       .ToList();
 
-    games.Should().HaveCount(9, "the repo ships nine sample games");
+    // Nine samples plus KnockItOff, which is a game in development rather than
+    // a sample — see CLAUDE.md. The count is deliberately hard-coded: it is a
+    // tripwire that fires when a project is added, so that whoever added it has
+    // to come here and confirm it carries its own palette.
+    games.Should().HaveCount(10, "the repo ships nine sample games plus KnockItOff");
     foreach (string game in games)
     {
       File.Exists(Path.Combine(src, game, "Content", "sprites", "palette.gpl"))

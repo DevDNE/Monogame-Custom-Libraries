@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A reusable MonoGame DesktopGL framework library (`MonoGame.GameFramework`) with **nine sample games in different genres** that exercise and validate it. Uses Microsoft.Extensions.DependencyInjection for wiring services together.
 
+**Nine samples and one game are not the same thing.** The samples are deliberately minimal: each exists to prove a slice of the library against a genre, and every claim in this file of the form "N of 9 samples do X" is evidence gathered from them. `KnockItOff` (added 2026-09-07) is not one of them — it is a real game in development (34 units, 12 traits, 40 items, an economy and a real-time combat sim) that happens to live here while the two library seams it opens are built against it: `Rendering.HexGrid` and an animator with frame durations as data. Counting it as a tenth sample would corrupt exactly the evidence the other nine exist to provide. It gets split into its own repository once those seams land and stop changing; until then the coupling is the point.
+
 ## Solution Structure
 
 ```
@@ -21,8 +23,19 @@ src/
   MonoGame.GameFramework.Rhythm/        ← 4-lane rhythm game
   MonoGame.GameFramework.VisualNovel/   ← Dialogue-tree VN with save/load
   MonoGame.GameFramework.AutoBattler/   ← Auto-chess shop + combat loop
-  MonoGame.GameFramework.Tests/         ← xUnit tests for the library + tools (552 tests)
+  MonoGame.GameFramework.KnockItOff/    ← NOT a sample. A game in development (see above)
+  MonoGame.GameFramework.Tests/         ← xUnit tests for the library + tools (555 tests)
+design/
+  knock-it-off.md                       ← the game's spec
+assets/concept/                         ← generator output. Binaries are gitignored;
+                                          the prompts beside them are not
 ```
+
+`KnockItOff` sits under `src/` beside the samples because six call sites in
+`mgf-tools` discover projects with `EnumerateDirectories(src, "MonoGame.GameFramework.*")`.
+That is a naming convention, not a claim that it is a sample — the distinction
+lives in prose here and in `PaletteRegistryTests`, and becomes structural only
+if something forces it.
 
 ## Build & Run
 
@@ -131,6 +144,7 @@ Per-game entities are plain classes — the library does not provide a shared en
 - Run one game: `dotnet run --project src/MonoGame.GameFramework.Shooter/MonoGame.GameFramework.Shooter.csproj -- --exit-after 60`
 - Run all 9: `scripts/smoke-all.sh [frames] [timeout_seconds]` — builds the solution, launches each sample with a perl-based wall-clock timeout, tails the log on any failure. Catches init-time crashes the unit suite can't see (SpriteFont charset issues, content-pipeline cache staleness, service-resolution failures, LoadContent throws).
 - **Requires a reachable window server** (refined 2026-08-18, see FINDINGS §13.1). Not over SSH, not on a headless runner. It *does* work from an agent/background shell on a logged-in Mac — measured at a sustained 60 fps and `rc=0`, which is real vsync against a real compositor — so the old blanket "not from an agent shell" was too strong. Each sample opens an SDL window; with no window server to composite it, the process gets past init and content-load, then blocks forever in `Cocoa_GL_SwapWindow` → `SDL_CondWait` waiting on a vsync. Every sample then times out with `rc=142` and a **zero-byte log**, which looks identical to a mass crash. If you see that pattern, check where you're running it before debugging the games. This is also why smoke isn't in CI — a headless runner needs a virtual display (xvfb).
+- **…and the display must be awake** (added 2026-09-07, see FINDINGS §13.1). A sleeping display stops vsync, so the swap blocks in exactly the same place and produces exactly the same `rc=142` + zero-byte log on a machine that is logged in, in an `Aqua` session, with `WindowServer` running. This is the likelier of the two causes by far — a developer's Mac sleeps its display daily and never loses its window server. Check `system_profiler SPDisplaysDataType | grep "Display Asleep"` first; `caffeinate -u -t 90` wakes it and the same command returns `rc=0` in 3s. When neither explanation fits, `sample <pid>` names the blocking frame outright instead of leaving you to infer it.
 - **It launches the games; it cannot drive them.** No gate in this repo presses a key, so anything that only exists once input arrives — a walk cycle, a jump arc, a menu traversal — is unverified by every check that passes. FINDINGS §13 has the measurements and the shape a rig would need; the short version is that a `SmokeHarness --capture-frame N` dumping the render target to PNG would beat screen-scraping outright, and would work headless.
 
 **Dev tools** (`src/MonoGame.GameFramework.Tools/`, binary `mgf-tools`):

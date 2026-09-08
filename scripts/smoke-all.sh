@@ -23,6 +23,7 @@ PROJECTS=(
   Rhythm
   VisualNovel
   AutoBattler
+  KnockItOff
 )
 
 echo "Building solution..."
